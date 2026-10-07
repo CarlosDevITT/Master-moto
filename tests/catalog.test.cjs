@@ -23,7 +23,7 @@ async function app(seed = {}, storageFailure = false) {
   };
   for (const [key, value] of Object.entries(seed)) w.localStorage.setItem(key, value);
   if (storageFailure) w.Storage.prototype.setItem = () => { throw new Error('quota'); };
-  for (const file of ['data.js', 'guide-data.js', 'perfil-data.js', 'data-import.js', 'perfil.js', 'app.js', 'accessibility.js']) {
+  for (const file of ['data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'accessibility.js']) {
     const script = w.document.createElement('script');
     script.textContent = fs.readFileSync(path.join(root, 'js', file), 'utf8');
     w.document.body.append(script);
@@ -36,15 +36,13 @@ const RECORDS = 'master-motos-records-v1';
 const NOTES = 'master-motos-notes-v1';
 const input = (w, id, value) => { const el = w.document.getElementById(id); el.value = value; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
 const submit = (w, id) => w.document.getElementById(id).dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
-test('Inicializa catálogo completo e mantém categorias quando CSV de produtos está ausente', async () => {
+test('Inicializa catálogo completo sem aba ou carregamento de produtos importados', async () => {
   const a = await app();
   try {
     assert.equal(Number(a.doc.querySelector('#sideCount').textContent), a.w.MOTO_DATA.length);
-    assert.equal(a.w.PROJECT_DATA.status, 'ready');
-    assert.ok(a.w.PROJECT_DATA.categories.length > 0);
-    assert.ok(a.w.PROJECT_DATA.categories.every(c => c.id));
-    assert.ok(!JSON.stringify(a.w.PROJECT_DATA.categories).includes('\uFFFD'));
-    assert.match(a.w.PROJECT_DATA.notice, /ausente/);
+    assert.equal(a.doc.querySelector('[data-view="produtos"]'), null);
+    assert.equal(a.doc.querySelector('#dataImportView'), null);
+    assert.equal(a.w.PROJECT_DATA, undefined);
   } finally { a.close(); }
 });
 test('Snapshot vazio e notas vazias permanecem vazios após recarregar', async () => {
@@ -73,10 +71,10 @@ test('Exclusão permanece após recarregar e limpa notas e perfil associados', a
   try { assert.equal(Number(b.doc.querySelector('#sideCount').textContent), b.w.MOTO_DATA.length - 1); }
   finally { b.close(); }
 });
-test('Navegação sempre exibe uma única seção, inclusive produtos e parâmetros', async () => {
+test('Navegação sempre exibe uma única seção entre catálogo, notas, visão geral e parâmetros', async () => {
   const a = await app();
   try {
-    for (const name of ['produtos', 'titulos', 'dashboard', 'notas', 'catalogo']) {
+    for (const name of ['titulos', 'dashboard', 'notas', 'catalogo']) {
       a.doc.querySelector(`[data-view="${name}"]`).click();
       const visible = [...a.doc.querySelectorAll('.main > .content')].filter(el => !el.classList.contains('hidden'));
       assert.equal(visible.length, 1, name);
@@ -128,20 +126,22 @@ test('Falha de armazenamento mantém catálogo e formulário abertos sem indicar
     assert.match(a.doc.querySelector('#toast').textContent,/Não foi possível salvar/);
   } finally { a.close(); }
 });
-test('CSV suporta UTF-8, Windows-1252, valores brasileiros e pesquisa de categorias', async () => {
-  const a = await app();
+test('Busca combina marca, modelo, cilindrada e ano de aplicação em qualquer ordem', async () => {
+  const record = { id: 1, marca: 'Honda', modelo: 'CRF 250F', cilindrada: 250, anoInicial: 2019, anoFinal: 2026, categoria: 'Enduro', nomeTitulo: 'CRF250F', quatroTempos: '4T', doisTempos: '' };
+  const a = await app({[RECORDS]: JSON.stringify([record])});
   try {
-    assert.equal(a.w.MMData.formatPrice('1.234,56'), 'R$\u00a01.234,56');
-    assert.equal(a.w.MMData.formatPrice('1234.56'), 'R$\u00a01.234,56');
-    assert.equal(a.w.MMData.formatPrice('0'), 'R$\u00a00,00');
-    const csv = Buffer.from('\uFEFFCódigo;Descrição;Preço;Estoque;Situação;Categoria do produto\n001;"Peça; especial";"1.234,56";2;Ativo;ROLAMENTOS');
-    await a.w.MMData.importProducts({arrayBuffer:async()=>csv.buffer.slice(csv.byteOffset,csv.byteOffset+csv.byteLength)});
-    assert.equal(a.w.PROJECT_DATA.products[0].codigo,'001');
-    assert.equal(a.w.PROJECT_DATA.products[0].descricao,'Peça; especial');
-    a.doc.querySelector('[data-view="produtos"]').click();
-    a.doc.querySelector('[data-data-tab="categories"]').click();
-    input(a.w, 'dataSearch', 'INEXISTENTE');
-    assert.match(a.doc.querySelector('#dataResultSummary').textContent, /^0 categorias/);
+    for (const query of ['Honda 250 2020', '2020 CRF250F Honda', '  honda   4T  ', 'CRF-250F']) {
+      input(a.w, 'searchLarge', query);
+      assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 1, query);
+    }
+    input(a.w, 'searchLarge', 'Honda 2010');
+    assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 0);
+    assert.ok(a.doc.querySelector('#exportBtn').disabled);
+    a.doc.querySelector('[data-empty-action="clear"]').click();
+    assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 1);
+    assert.equal(a.doc.querySelector('#searchLarge').value, '');
+    assert.match(a.doc.querySelector('#resultSummary').textContent, /1–1 de 1 motos/);
+    assert.equal(a.doc.querySelector('#exportBtn').disabled, false);
   } finally { a.close(); }
 });
 test('Busca, paginação e limpar filtros mantêm a interface consistente', async () => {
@@ -172,5 +172,19 @@ test('Exclusão em lote mantém seleção vazia e catálogo vazio após recarreg
     assert.equal(a.w.localStorage.getItem(RECORDS), '[]');
     assert.equal(a.doc.querySelector('#selectedCount').textContent, '0');
     assert.equal(a.doc.querySelector('#sideCount').textContent, '0');
+  } finally { a.close(); }
+});
+
+test('Limpar busca e filtros também redefine a categoria e a densidade informa o estado', async () => {
+  const a = await app();
+  try {
+    a.doc.querySelector('[data-tab="onroad"]').click();
+    input(a.w, 'searchLarge', 'Honda');
+    a.doc.querySelector('#catalogReset').click();
+    assert.ok(a.doc.querySelector('[data-tab="todos"]').classList.contains('active'));
+    assert.equal(a.doc.querySelector('#searchLarge').value, '');
+    a.doc.querySelector('#compactBtn').click();
+    assert.equal(a.doc.querySelector('#compactBtn').getAttribute('aria-pressed'), 'true');
+    assert.match(a.doc.querySelector('#compactBtn').textContent, /Expandir/);
   } finally { a.close(); }
 });

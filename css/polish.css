@@ -22,6 +22,14 @@ td { font-size: 12px; }
 .row-action { transition: color .15s, background .15s; }
 .row-action:hover { color: var(--ink); background: var(--yellow-soft); }
 .model-cell { color: var(--ink); }
+.catalog-empty { text-align: center; padding: 42px 20px; white-space: normal; }
+.catalog-empty > strong { display: block; font-size: 18px; color: var(--ink); }
+.catalog-empty p { margin: 8px 0 18px; color: var(--muted); }
+.catalog-empty > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+#catalogView .table-wrap tr[data-id] > td:last-child { position: sticky; right: 0; background: var(--surface); box-shadow: -5px 0 10px #18233408; }
+#catalogView .table-wrap th.action-col { position: sticky; right: 0; z-index: 3; }
+#catalogView .table-wrap tr[data-id]:hover > td:last-child { background: var(--yellow-soft); }
+#resultSummary { font-variant-numeric: tabular-nums; }
 .filter-summary.has-filters { max-height: none; }
 .primary-btn { box-shadow: 0 3px 10px #f4b91e20; }
 button:disabled { cursor: default; opacity: .45; }

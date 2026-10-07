@@ -110,7 +110,7 @@ window.MMPerfil = (function () {
     const t = $('#titulosView'); if (!t) return;
     t.classList.toggle('hidden', view !== 'titulos');
     if (view !== 'guia') $('#guideView')?.classList.add('hidden');
-    if (view === 'titulos') { ['#catalogView', '#dashboardView', '#notesView', '#dataImportView'].forEach((s) => $(s)?.classList.add('hidden')); $('#pageTitle').textContent = 'Parâmetros para títulos'; renderTitulos(); }
+    if (view === 'titulos') { ['#catalogView', '#dashboardView', '#notesView'].forEach((s) => $(s)?.classList.add('hidden')); $('#pageTitle').textContent = 'Parâmetros para títulos'; renderTitulos(); }
   }
 
   function init() {

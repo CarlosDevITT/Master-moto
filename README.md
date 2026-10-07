@@ -1,6 +1,6 @@
 # Master Motos
 
-Catálogo de aplicações de motos com busca, filtros, cadastro, classificação comercial, notas e consulta de produtos e categorias.
+Catálogo de aplicações de motos com busca, filtros, cadastro, classificação comercial, notas e exportação de aplicações.
 
 ## Executar
 
@@ -10,8 +10,8 @@ Com Node.js instalado, execute `npm run dev` e abra <http://localhost:4173>. O a
 
 - A base inicial contém 464 motos, em `js/data.js`, extraídas de `Data/MASTER_MOTOS_v6.xlsx`.
 - Cadastros, exclusões, classificações, notas e preferência de tema são salvos **no navegador atual**. Não existe sincronização com outros dispositivos ou contas.
-- As categorias são carregadas do CSV incluído em `Data`, com suporte a UTF-8 e Windows-1252.
-- O CSV de produtos referenciado pelo projeto original não está no repositório. A ausência não impede o uso das categorias. Na seção **Produtos**, use **Importar produtos CSV**. São necessárias as colunas `Descrição` e `Código` ou `ID`; o limite é 20 MB. Essa importação permanece apenas na sessão; mantenha o CSV original.
+- A aba Produtos importados foi retirada. Os arquivos de origem continuam preservados no repositório.
+- A busca combina termos em qualquer ordem (ex.: `Honda 250 2020`) e considera marca, modelo, cilindrada, motor e ano de aplicação.
 - Notas podem ser exportadas e importadas em JSON. O catálogo filtrado e os títulos podem ser exportados em CSV.
 - **Restaurar base** remove cadastros e notas locais e restaura a planilha original, após confirmação.
 
@@ -19,7 +19,7 @@ Para atualizar a base de motos a partir da planilha, execute `./tools/extract-da
 
 ## Verificação
 
-`npm test` valida inicialização, navegação, busca, paginação, cadastro, classificação, notas, exclusão simples e em lote, persistência após recarga, importação CSV e falhas de armazenamento. `npm run check` verifica a sintaxe dos arquivos JavaScript e os recursos locais do HTML.
+`npm test` valida inicialização, navegação, busca, paginação, cadastro, classificação, notas, exclusão simples e em lote, persistência após recarga, busca combinada, limpeza de filtros e falhas de armazenamento. `npm run check` verifica a sintaxe dos arquivos JavaScript e os recursos locais do HTML.
 
 Os testes usam um DOM simulado; não substituem a inspeção visual em um navegador real. A tentativa de abrir a prévia no navegador conectado nesta revisão não conseguiu acessar o servidor local.
 

@@ -34,7 +34,6 @@ const validNote = (note) => note && Number.isSafeInteger(Number(note.id)) && Num
 let notes = (Array.isArray(savedNotes) ? savedNotes : Array.isArray(backupNotes) ? backupNotes : []).filter(validNote).map(note => ({ ...note, id: Number(note.id) }));
 let state = { tab: 'todos', query: '', category: '', brand: '', engine: '', year: '', yearMin: '', yearMax: '', notesOnly: false, page: 1, pageSize: 15, sort: 'marca', dir: 1, compact: false, perfil: '', faixa: '', estrela: '' };
 let notesUi = { type: 'all', sort: 'recent' };
-let dataUi = { tab: 'products', query: '', category: '', status: '', page: 1, pageSize: 24 };
 const selectedMotoIds = new Set();
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -115,8 +114,12 @@ function guideTypeFor(record) {
 }
 
 function matches(record) {
-  const haystack = normalize(`${record.marca} ${record.modelo} ${record.nomeTitulo} ${record.categoria}`);
-  if (state.query && !haystack.includes(normalize(state.query))) return false;
+  const haystack = normalize(`${record.marca} ${record.modelo} ${record.nomeTitulo} ${record.categoria} ${record.cilindrada} ${record.doisTempos ? '2T' : '4T'}`).replace(/[^a-z0-9]/g, '');
+  const terms = normalize(state.query).trim().split(/\s+/).filter(Boolean);
+  if (!terms.every(term => {
+    if (/^(19|20)\d{2}$/.test(term)) return Number(record.anoInicial) <= Number(term) && Number(record.anoFinal) >= Number(term);
+    return haystack.includes(term.replace(/[^a-z0-9]/g, ''));
+  })) return false;
   if (state.tab === 'offroad' && !isOffRoad(record)) return false;
   if (state.tab === 'onroad' && isOffRoad(record)) return false;
   if (state.category && record.categoria !== state.category) return false;
@@ -160,43 +163,17 @@ function noteBadge(record) {
   return `<button class="note-badge ${esc(topNote.type)}" title="Abrir notas"><i></i>${recordNotes.length} ${recordNotes.length === 1 ? 'nota' : 'notas'}</button>`;
 }
 
-function renderDataModule() {
-  const data = window.PROJECT_DATA || { status: 'idle', categories: [], products: [] };
-  const status = $('#dataStatus'); const summary = $('#dataSummary'); const categoryList = $('#dataCategoryList'); const productList = $('#dataProductList');
-  if (!status || !summary || !categoryList || !productList) return;
-  const categories = Array.isArray(data.categories) ? data.categories : []; const products = Array.isArray(data.products) ? data.products : [];
-  if (data.status === 'loading' || data.status === 'idle') { status.textContent = 'Carregando base...'; summary.innerHTML = '<div class="data-stat-card data-stat-card-ghost">Lendo os arquivos da pasta Data...</div>'; return; }
-  if (data.status === 'error') { status.textContent = 'Falha na importação'; status.className = 'stat-pill blue data-status-pill data-status-error'; summary.innerHTML = `<div class="data-stat-card data-stat-card-error">${esc(data.error || 'Não foi possível carregar os dados.')}</div>`; return; }
-  status.textContent = `Dados prontos · ${fmt(products.length)} itens`; status.className = 'stat-pill green data-status-pill'; $('#productCount').textContent = fmt(products.length);
-  $('#dataProductsTabCount').textContent = fmt(products.length); $('#dataCategoriesTabCount').textContent = fmt(categories.length);
-  const active = products.filter((item) => normalize(item.situacao) === 'ativo').length;
-  summary.innerHTML = `<div class="data-stat-card"><strong>${fmt(products.length)}</strong><small>Produtos importados</small></div><div class="data-stat-card"><strong>${fmt(active)}</strong><small>Produtos ativos</small></div><div class="data-stat-card"><strong>${fmt(categories.length)}</strong><small>Categorias cadastradas</small></div>`;
-  const categoryNames = [...new Set(products.map((item) => item.categoria || item.departamento).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  const filter = $('#dataCategoryFilter'); if (filter && filter.options.length === 1) filter.insertAdjacentHTML('beforeend', categoryNames.map((name) => `<option value="${esc(name)}">${esc(name)}</option>`).join(''));
-  const q = normalize(dataUi.query); const filtered = products.filter((item) => normalize(`${item.id} ${item.codigo} ${item.descricao} ${item.marca} ${item.gtin}`).includes(q) && (!dataUi.category || (item.categoria || item.departamento) === dataUi.category) && (!dataUi.status || normalize(item.situacao) === normalize(dataUi.status)));
-  const categoryCounts = products.reduce((map, item) => { const name = item.categoria || item.departamento || 'Sem categoria'; map[name] = (map[name] || 0) + 1; return map; }, {});
-  const filteredCategories = categories.filter(item => normalize(`${item.id} ${item.nome}`).includes(q) && (!dataUi.status || normalize(item.status) === normalize(dataUi.status)));
-  $('#dataCategoryFilter').disabled = dataUi.tab === 'categories';
-  $('#dataSearch').placeholder = dataUi.tab === 'categories' ? 'Buscar categoria ou código...' : 'Buscar código, descrição, marca ou GTIN...';
-  $('#dataNotice').textContent = data.notice || '';
-  const total = dataUi.tab === 'products' ? filtered.length : filteredCategories.length; const pages = Math.max(1, Math.ceil(total / dataUi.pageSize)); dataUi.page = Math.min(dataUi.page, pages); const start = (dataUi.page - 1) * dataUi.pageSize;
-  if (dataUi.tab === 'categories') { categoryList.classList.remove('hidden'); productList.classList.add('hidden'); categoryList.innerHTML = filteredCategories.slice(start, start + dataUi.pageSize).map((item) => `<article class="data-category-card"><div class="data-category-icon">${esc((item.nome || 'C').slice(0, 1))}</div><div><strong>${esc(item.nome || item.id || 'Categoria')}</strong><small>${esc(item.status || 'Ativa')} · nível ${esc(item.nivel || '1')}</small></div><b>${fmt(categoryCounts[item.nome] || 0)} itens</b></article>`).join('') || '<div class="data-empty data-empty-wide">Nenhuma categoria encontrada.</div>'; }
-  else { categoryList.classList.add('hidden'); productList.classList.remove('hidden'); productList.innerHTML = filtered.slice(start, start + dataUi.pageSize).map((item) => `<article class="data-product-card"><div class="data-product-main"><span class="data-product-code">${esc(item.codigo || `ID ${item.id}`)}</span><strong>${esc(item.descricao || 'Produto sem descrição')}</strong><small>${esc(item.marca || 'Marca não informada')} · ${esc(item.categoria || item.departamento || 'Sem categoria')}</small></div><div class="data-product-meta"><span class="data-label">Preço</span><span class="data-price">${esc(window.MMData.formatPrice(item.preco))}</span></div><div class="data-product-meta"><span class="data-label">Estoque</span><span class="data-stock ${normalize(item.situacao) === 'ativo' ? 'is-active' : ''}">${esc(item.estoque || '0')}</span></div><div class="data-product-meta"><span class="data-label">Situação</span><small>${esc(item.situacao || 'Sem situação')}</small></div></article>`).join('') || '<div class="data-empty data-empty-wide">Nenhum produto encontrado para os filtros atuais.</div>'; }
-  $('#dataResultSummary').textContent = `${fmt(total)} ${dataUi.tab === 'products' ? 'produtos' : 'categorias'}`; $('#dataCurrentPage').textContent = String(dataUi.page); $('#dataPrevPage').disabled = dataUi.page <= 1; $('#dataNextPage').disabled = dataUi.page >= pages;
-}
-
 function render(full = true) {
   if (full) stats();
-  if (full && !$('#dataImportView').classList.contains('hidden')) renderDataModule();
   $$('[data-quick]').forEach(button => button.classList.toggle('active', button.dataset.quick === (state.notesOnly ? 'notes' : state.engine || 'all')));
   $$('th[data-sort]').forEach(header => header.setAttribute('aria-sort', header.dataset.sort === state.sort ? (state.dir === 1 ? 'ascending' : 'descending') : 'none'));
   const rows = filtered();
   const pages = Math.max(1, Math.ceil(rows.length / state.pageSize));
   if (state.page > pages) state.page = pages;
   const visible = rows.slice((state.page - 1) * state.pageSize, state.page * state.pageSize);
-  $('#resultSummary').textContent = `${fmt(rows.length)} registro${rows.length === 1 ? '' : 's'}`; $('#pageInfo').textContent = `Página ${state.page} de ${pages}`; $('.pagination .current').textContent = state.page;
+  $('#resultSummary').textContent = rows.length ? `Exibindo ${fmt((state.page - 1) * state.pageSize + 1)}–${fmt(Math.min(state.page * state.pageSize, rows.length))} de ${fmt(rows.length)} motos` : 'Nenhuma moto encontrada'; $('#exportBtn').disabled = rows.length === 0; $('#pageInfo').textContent = `Página ${state.page} de ${pages}`; $('.pagination .current').textContent = state.page;
   $('#prevPage').disabled = state.page === 1; $('#nextPage').disabled = state.page === pages;
-  $('#motoRows').innerHTML = visible.map((record) => `<tr data-id="${record.id}"><td><input class="row-check" type="checkbox" aria-label="Selecionar ${esc(record.modelo)}"></td><td class="brand-cell">${esc(record.marca)}</td><td class="model-cell">${esc(record.modelo)}</td><td class="cc">${fmt(record.cilindrada)} cc</td><td><span class="engine ${record.doisTempos ? 'two' : ''}">${record.doisTempos ? '2T' : '4T'}</span></td><td class="year">${record.anoInicial} — ${record.anoFinal}</td><td class="category">${categoryBadge(record.categoria)}</td>${MMPerfil.cells(record)}<td class="note-cell">${noteBadge(record)}</td><td class="title-cell">${esc(record.nomeTitulo)}</td><td><div class="row-actions"><button class="row-action add-note" title="Adicionar nota">▤</button><button class="row-action edit" title="Editar">✎</button><button class="row-action delete" title="Excluir">⌫</button></div></td></tr>`).join('') || '<tr><td colspan="13" style="text-align:center;padding:40px;color:#8a909b">Nenhum registro encontrado. Tente limpar os filtros.</td></tr>';
+  $('#motoRows').innerHTML = visible.map((record) => `<tr data-id="${record.id}"><td><input class="row-check" type="checkbox" aria-label="Selecionar ${esc(record.modelo)}"></td><td class="brand-cell">${esc(record.marca)}</td><td class="model-cell">${esc(record.modelo)}</td><td class="cc">${fmt(record.cilindrada)} cc</td><td><span class="engine ${record.doisTempos ? 'two' : ''}">${record.doisTempos ? '2T' : '4T'}</span></td><td class="year">${record.anoInicial} — ${record.anoFinal}</td><td class="category">${categoryBadge(record.categoria)}</td>${MMPerfil.cells(record)}<td class="note-cell">${noteBadge(record)}</td><td class="title-cell">${esc(record.nomeTitulo)}</td><td><div class="row-actions"><button class="row-action add-note" title="Adicionar nota">▤</button><button class="row-action edit" title="Editar">✎</button><button class="row-action delete" title="Excluir">⌫</button></div></td></tr>`).join('') || '<tr><td colspan="13" class="catalog-empty"><strong>Nenhuma moto encontrada</strong><p>Experimente outra marca, modelo ou ano, ou limpe os filtros.</p><div><button class="subtle-btn" data-empty-action="clear">Limpar busca e filtros</button><button class="primary-btn" data-empty-action="new">+ Cadastrar moto</button></div></td></tr>';
   const activeFilters = [state.brand, state.category, state.engine, state.year, state.notesOnly, state.perfil, state.faixa, state.estrela].filter(Boolean).length;
   $('#filterCount').textContent = activeFilters; $('#filterCount').classList.toggle('visible', Boolean(activeFilters));
   ensureGuideButtons(); renderSelectionState(); renderFilterSummary();
@@ -372,44 +349,19 @@ $('#notesSearch').addEventListener('input', renderNotes); $('#notesGrid').addEve
 $('#motoRows').addEventListener('click', (event) => { const row = event.target.closest('tr'); if (!row) return; const motoId = Number(row.dataset.id); if (event.target.closest('.edit')) openMotoModal(motoId); if (event.target.closest('.add-note') || event.target.closest('.note-add') || event.target.closest('.note-badge')) openNoteModal(motoId); });
 $('#motoForm').addEventListener('submit', (event) => { event.preventDefault(); const id = Number($('#motoId').value); const payload = { id: id || Math.max(0, ...records.map((record) => record.id)) + 1, marca: $('#marca').value.trim(), modelo: $('#modelo').value.trim(), cilindrada: Number($('#cilindrada').value), categoria: $('#categoria').value, anoInicial: Number($('#anoInicial').value), anoFinal: Number($('#anoFinal').value), nomeTitulo: $('#nomeTitulo').value.trim(), quatroTempos: $('#motor').value === '4T' ? '4T' : '', doisTempos: $('#motor').value === '2T' ? '2T' : '' }; if (!commitCatalog(id ? records.map((record) => record.id === id ? payload : record) : [payload, ...records])) return; MMPerfil.saveForm(payload.id); closeMotoModal(); populateOptions(); render(); toast(id ? 'Registro atualizado' : 'Moto adicionada'); });
 $('#noteForm').addEventListener('submit', (event) => { event.preventDefault(); const id = Number($('#noteId').value); const title = $('#noteTitle').value.trim(); const text = $('#noteText').value.trim(); if (!title || !text) return toast('Preencha o título e o conteúdo da nota'); const note = { id: id || Date.now(), motoId: Number($('#noteMotoSelect').value) || null, type: $('#noteType').value, title, text, refs: readNoteRefs(), updatedAt: new Date().toLocaleDateString('pt-BR') }; if (!commitCatalog(records, id ? notes.map((item) => item.id === id ? { ...item, ...note } : item) : [note, ...notes])) return; closeNoteModal(); render(); toast(id ? 'Nota atualizada' : 'Nota salva'); });
-$('#exportBtn').addEventListener('click', exportCsv); $('#compactBtn').addEventListener('click', () => { state.compact = !state.compact; document.body.classList.toggle('compact', state.compact); toast(state.compact ? 'Linhas compactadas' : 'Linhas expandidas'); }); $('#resetData').addEventListener('click', () => { if (confirm('Restaurar os dados originais da planilha?')) { if (!commitCatalog(initialData.map(record => ({ ...record })), [])) return; selectedMotoIds.clear(); guideStore = { schemaVersion: GUIDE_SCHEMA_VERSION, notes: {} }; writeGuideStore(); MMPerfil.reset(); $('#clearFilters').click(); populateOptions(); render(); toast('Base original restaurada'); } });
+$('#exportBtn').addEventListener('click', exportCsv); $('#compactBtn').addEventListener('click', () => { state.compact = !state.compact; document.body.classList.toggle('compact', state.compact); $('#compactBtn').setAttribute('aria-pressed', String(state.compact)); $('#compactBtn').textContent = state.compact ? '⊞ Expandir linhas' : '⊞ Compactar linhas'; toast(state.compact ? 'Linhas compactadas' : 'Linhas expandidas'); }); $('#resetData').addEventListener('click', () => { if (confirm('Restaurar os dados originais da planilha?')) { if (!commitCatalog(initialData.map(record => ({ ...record })), [])) return; selectedMotoIds.clear(); guideStore = { schemaVersion: GUIDE_SCHEMA_VERSION, notes: {} }; writeGuideStore(); MMPerfil.reset(); $('#clearFilters').click(); populateOptions(); render(); toast('Base original restaurada'); } });
 $('.nav').addEventListener('click', event => {
   const button = event.target.closest('[data-view]');
   if (!button) return;
   const view = button.dataset.view;
-  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', produtos: 'dataImportView', 'data-import': 'dataImportView', notas: 'notesView', titulos: 'titulosView', guia: 'guideView' };
+  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', titulos: 'titulosView', guia: 'guideView' };
   $$('.main > .content').forEach(section => section.classList.toggle('hidden', section.id !== views[view]));
   $$('.nav-item').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-current', item === button ? 'page' : 'false'); });
-  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', produtos: 'Produtos e categorias', notas: 'Notas e avisos', titulos: 'Parâmetros para títulos', guia: 'Guia de componentes' };
-  $('#pageTitle').textContent = labels[view] || 'Produtos e categorias';
-  if (views[view] === 'dataImportView') renderDataModule();
+  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', titulos: 'Parâmetros para títulos', guia: 'Guia de componentes' };
+  $('#pageTitle').textContent = labels[view] || 'Catálogo de motos';
   if (view === 'guia') { renderGuideMotoOptions(); renderGuide(); }
 });
-$('#importProducts').addEventListener('click', () => $('#productsFile').click());
-$('#productsFile').addEventListener('change', async event => {
-  const file = event.target.files[0];
-  if (!file) return;
-  try {
-    if (file.size > 20 * 1024 * 1024) throw new Error('O arquivo deve ter até 20 MB.');
-    await window.MMData.importProducts(file);
-    dataUi.page = 1; dataUi.category = ''; dataUi.status = ''; dataUi.query = '';
-    $('#dataCategoryFilter').innerHTML = '<option value="">Todas as categorias</option>';
-    $('#dataSearch').value = $('#dataStatusFilter').value = '';
-    renderDataModule(); toast('Produtos importados nesta sessão.');
-  } catch (error) { toast(error.message || 'Não foi possível importar o arquivo.'); }
-  finally { event.target.value = ''; }
-});
-$$('[data-data-tab]').forEach((button) => button.addEventListener('click', () => { $$('[data-data-tab]').forEach((item) => item.classList.toggle('active', item === button)); dataUi.tab = button.dataset.dataTab; dataUi.page = 1; renderDataModule(); }));
-$('#dataSearch').addEventListener('input', (event) => { dataUi.query = event.target.value; dataUi.page = 1; renderDataModule(); });
-$('#dataCategoryFilter').addEventListener('change', (event) => { dataUi.category = event.target.value; dataUi.page = 1; renderDataModule(); });
-$('#dataStatusFilter').addEventListener('change', (event) => { dataUi.status = event.target.value; dataUi.page = 1; renderDataModule(); });
-$('#dataPageSize').addEventListener('change', (event) => { dataUi.pageSize = Number(event.target.value); dataUi.page = 1; renderDataModule(); });
-$('#dataPrevPage').addEventListener('click', () => { dataUi.page -= 1; renderDataModule(); }); $('#dataNextPage').addEventListener('click', () => { dataUi.page += 1; renderDataModule(); });
 applyTheme(savedTheme);
-window.addEventListener('project-data-ready', () => {
-  renderDataModule();
-  render();
-});
 $('#themeBtn').addEventListener('click', () => {
   const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
   applyTheme(nextTheme);
@@ -437,3 +389,14 @@ $('#deleteSelected').addEventListener('click', async () => { const ids = [...sel
 $('#motoRows').addEventListener('click', (event) => { if (!event.target.closest('.row-check')) return; event.stopPropagation(); });
 $('#motoRows').addEventListener('click', async (event) => { const deleteButton = event.target.closest('.delete'); if (!deleteButton) return; event.preventDefault(); event.stopImmediatePropagation(); const row = deleteButton.closest('tr'); const id = Number(row.dataset.id); const record = records.find((item) => Number(item.id) === id); if (!record) return; const confirmed = await confirmCrud(`Apagar ${record.modelo}?`, 'O registro será removido do catálogo.', 'Apagar'); if (!confirmed) return; if (!commitCatalog(records.filter((item) => Number(item.id) !== id), notes.filter((note) => Number(note.motoId) !== id))) return; removeGuideNotesFor([id]); selectedMotoIds.delete(id); populateOptions(); render(); crudFeedback('Registro apagado', `${record.marca} ${record.modelo} foi removido.`); }, true);
 $('#motoForm').addEventListener('submit', (event) => { const start = Number($('#anoInicial').value); const end = Number($('#anoFinal').value); const id = Number($('#motoId').value); const duplicate = records.some((record) => record.id !== id && record.marca.trim().toLowerCase() === $('#marca').value.trim().toLowerCase() && record.modelo.trim().toLowerCase() === $('#modelo').value.trim().toLowerCase()); if (!$('#marca').value.trim() || !$('#modelo').value.trim() || !$('#nomeTitulo').value.trim()) { event.preventDefault(); event.stopImmediatePropagation(); crudFeedback('Campos obrigatórios', 'Preencha marca, modelo e nome do título.', 'warning'); } else if (start > end) { event.preventDefault(); event.stopImmediatePropagation(); crudFeedback('Período inválido', 'O ano inicial não pode ser maior que o ano final.', 'warning'); } else if (duplicate) { event.preventDefault(); event.stopImmediatePropagation(); crudFeedback('Registro duplicado', 'Já existe uma moto com esta marca e modelo.', 'warning'); } }, true);
+
+$('#catalogReset').addEventListener('click', () => {
+  state.tab = 'todos';
+  $$('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === 'todos'));
+  $('#clearFilters').click();
+});
+$('#motoRows').addEventListener('click', event => {
+  const action = event.target.closest('[data-empty-action]')?.dataset.emptyAction;
+  if (action === 'clear') $('#catalogReset').click();
+  if (action === 'new') openMotoModal();
+});
