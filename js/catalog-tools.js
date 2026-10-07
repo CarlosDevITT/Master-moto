@@ -81,7 +81,7 @@
     }
   }
   function snapshot() {
-    return clone({ format: 'master-motos-backup', schemaVersion: 1, exportedAt: new Date().toISOString(), records, notes, profiles: MMPerfil.exportData(), guide: guideStore, favorites, preferences, theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light' });
+    return clone({ format: 'master-motos-backup', schemaVersion: 1, exportedAt: new Date().toISOString(), records, notes, profiles: MMPerfil.exportData(), guide: guideStore, favorites, preferences, pricing: window.MMPricing?.exportData() ?? null, theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light' });
   }
   function validateBackup(value) {
     if (!isObject(value) || value.format !== 'master-motos-backup' || value.schemaVersion !== 1) throw new Error('Escolha um backup completo do Master Motos.');
@@ -110,7 +110,8 @@
       if (!/^[1-9]\d*:[a-zA-Z0-9_-]+$/.test(key) || !Array.isArray(list) || list.some(note => !isObject(note) || !text(note.id) || !text(note.text) || !text(note.createdAt) || !text(note.updatedAt))) throw new Error('Nota de componente inválida no backup.');
       guide.notes[key] = list.map(note => ({ id: note.id, text: note.text, createdAt: note.createdAt, updatedAt: note.updatedAt }));
     }
-    return { format: value.format, schemaVersion: 1, records: cleanedRecords, notes: cleanedNotes, profiles, guide, favorites: cleanFavorites(value.favorites || []), preferences: sanitizePreferences(value.preferences), theme: value.theme === 'dark' ? 'dark' : 'light' };
+    const pricing = value.pricing == null ? null : window.MMPricing.validateData(value.pricing);
+    return { format: value.format, schemaVersion: 1, records: cleanedRecords, notes: cleanedNotes, profiles, guide, favorites: cleanFavorites(value.favorites || []), preferences: sanitizePreferences(value.preferences), pricing, theme: value.theme === 'dark' ? 'dark' : 'light' };
   }
   function downloadBackup(data = snapshot()) {
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
@@ -122,6 +123,7 @@
   function publishSnapshot(data) {
     records = clone(data.records); notes = clone(data.notes); guideStore = clone(data.guide);
     MMPerfil.replaceData(data.profiles);
+    if (data.pricing) window.MMPricing.replaceData(data.pricing);
     favorites = clone(data.favorites); preferences = sanitizePreferences(data.preferences);
     applyTheme(data.theme); selectedMotoIds.clear();
     // Refresh both filter values and dynamically rebuilt options.
@@ -132,6 +134,7 @@
   function restoreBackup(raw, recovery = false) {
     const data = validateBackup(raw);
     const entries = [[STORAGE_KEY, data.records], [NOTES_KEY, data.notes], [PROFILE_KEY, data.profiles], [GUIDE_STORAGE_KEY, data.guide], [FAVORITES_KEY, data.favorites], [PREFS_KEY, data.preferences], [THEME_STORAGE_KEY, data.theme], [`${NOTES_KEY}-backup`, data.notes], [RECOVERY_KEY, recovery ? null : snapshot()]];
+    if (data.pricing) entries.push([window.MMPricing.storageKey, data.pricing]);
     if (!writeTransaction(entries)) return false;
     publishSnapshot(data);
     return true;

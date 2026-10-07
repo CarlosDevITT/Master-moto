@@ -356,10 +356,10 @@ $('.nav').addEventListener('click', event => {
   const button = event.target.closest('[data-view]');
   if (!button) return;
   const view = button.dataset.view;
-  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', titulos: 'titulosView', guia: 'guideView' };
+  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', titulos: 'titulosView', guia: 'guideView', precificacao: 'pricingView' };
   $$('.main > .content').forEach(section => section.classList.toggle('hidden', section.id !== views[view]));
   $$('.nav-item').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-current', item === button ? 'page' : 'false'); });
-  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', titulos: 'Parâmetros para títulos', guia: 'Guia de componentes' };
+  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', titulos: 'Parâmetros para títulos', guia: 'Guia de componentes', precificacao: 'Precificação' };
   $('#pageTitle').textContent = labels[view] || 'Catálogo de motos';
   if (view === 'guia') { renderGuideMotoOptions(); renderGuide(); }
 });

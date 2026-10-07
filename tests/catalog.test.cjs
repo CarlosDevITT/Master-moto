@@ -23,7 +23,7 @@ async function app(seed = {}, storageFailure = false) {
   };
   for (const [key, value] of Object.entries(seed)) w.localStorage.setItem(key, value);
   if (storageFailure) w.Storage.prototype.setItem = () => { throw new Error('quota'); };
-  for (const file of ['data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'catalog-tools.js', 'accessibility.js']) {
+  for (const file of ['data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'pricing-engine.js', 'pricing.js', 'catalog-tools.js', 'accessibility.js']) {
     const script = w.document.createElement('script');
     script.textContent = fs.readFileSync(path.join(root, 'js', file), 'utf8');
     w.document.body.append(script);
@@ -36,6 +36,75 @@ const RECORDS = 'master-motos-records-v1';
 const NOTES = 'master-motos-notes-v1';
 const input = (w, id, value) => { const el = w.document.getElementById(id); el.value = value; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
 const submit = (w, id) => w.document.getElementById(id).dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
+const pricingInput = (a, selector, value) => { const el = a.doc.querySelector(selector); el.value = value; el.dispatchEvent(new a.w.Event('input', { bubbles: true })); return el; };
+test('Precificação navega, salva automaticamente valores brasileiros e recupera simulações após recarregar', async () => {
+  const a = await app(); let seed;
+  try {
+    a.doc.querySelector('[data-view="precificacao"]').click();
+    const visible = [...a.doc.querySelectorAll('.main > .content')].filter(el => !el.classList.contains('hidden'));
+    assert.equal(visible.length, 1); assert.equal(visible[0].id, 'pricingView');
+    pricingInput(a, '[data-pricing-category="example17"] [data-category-field="cost"]', '1.234,56');
+    const rate = pricingInput(a, '[data-pricing-setting="commerce6Pct"]', '7,5');
+    rate.dispatchEvent(new a.w.Event('change', { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 420));
+    const saved = JSON.parse(a.w.localStorage.getItem(a.w.MMPricing.storageKey));
+    assert.equal(saved.categories[0].cost, 1234.56); assert.equal(saved.settings.commerce6Pct, 7.5);
+    assert.match(a.doc.querySelector('#pricingSaveStatus').textContent, /salvas/);
+    seed = { [a.w.MMPricing.storageKey]: JSON.stringify(saved) };
+    a.doc.querySelector('[data-view="catalogo"]').click(); assert.ok(a.doc.querySelector('#pricingView').classList.contains('hidden'));
+  } finally { a.close(); }
+  const b = await app(seed);
+  try { assert.equal(b.doc.querySelector('[data-category-field="cost"]').value, '1234,56'); assert.match(b.doc.querySelector('#pricingSaveStatus').textContent, /recuperadas/); }
+  finally { b.close(); }
+});
+test('Precificação rejeita campo inválido e mostra taxas impossíveis sem substituir o último salvamento', async () => {
+  const a = await app();
+  try {
+    a.w.MMPricing.save(); const previous = a.w.localStorage.getItem(a.w.MMPricing.storageKey);
+    const cost = pricingInput(a, '[data-category-field="cost"]', '');
+    assert.equal(cost.getAttribute('aria-invalid'), 'true'); assert.equal(a.w.MMPricing.save(), false);
+    assert.equal(a.w.localStorage.getItem(a.w.MMPricing.storageKey), previous);
+    assert.equal(a.doc.querySelector('[data-result-price]').textContent, '—');
+    pricingInput(a, '[data-category-field="cost"]', '100');
+    pricingInput(a, '[data-scenario-id="tax23"] [data-scenario-field="taxPct"]', '71');
+    assert.equal(a.doc.querySelector('[data-result-price]').textContent, '—');
+    assert.match(a.doc.querySelector('[data-result-profit]').textContent, /100%/);
+  } finally { a.close(); }
+});
+test('Backup completo inclui precificação e mantém compatibilidade com backups antigos', async () => {
+  const a = await app();
+  try {
+    pricingInput(a, '[data-category-field="cost"]', '222,22'); a.w.MMPricing.save();
+    const backup = a.w.MMCatalogTools.snapshot(); assert.equal(backup.pricing.categories[0].cost, 222.22);
+    pricingInput(a, '[data-category-field="cost"]', '333');
+    assert.equal(a.w.MMCatalogTools.restoreBackup(backup), true);
+    assert.equal(a.w.MMPricing.exportData().categories[0].cost, 222.22);
+    assert.equal(JSON.parse(a.w.localStorage.getItem(a.w.MMPricing.storageKey)).categories[0].cost, 222.22);
+    delete backup.pricing; pricingInput(a, '[data-category-field="cost"]', '444'); a.w.MMPricing.save();
+    assert.equal(a.w.MMCatalogTools.restoreBackup(backup), true); assert.equal(a.w.MMPricing.exportData().categories[0].cost, 444);
+  } finally { a.close(); }
+});
+test('Simulações podem ser duplicadas, removidas e importadas com validação', async () => {
+  const a = await app();
+  try {
+    a.doc.querySelector('[data-pricing-action="duplicate"]').click(); assert.equal(a.w.MMPricing.exportData().categories.length, 3);
+    a.doc.querySelector('[data-pricing-action="remove-category"]').click(); assert.equal(a.w.MMPricing.exportData().categories.length, 2);
+    a.doc.querySelector('[data-pricing-action="add-scenario"]').click(); assert.equal(a.w.MMPricing.exportData().categories[0].scenarios.length, 4);
+    const file = a.doc.querySelector('#pricingFile');
+    const imported = a.w.MMPricing.exportData(); imported.categories[0].cost = 99;
+    Object.defineProperty(file, 'files', { configurable: true, value: [{ size: 100, text: async () => JSON.stringify({ format: 'master-motos-pricing', schemaVersion: 1, data: imported }) }] });
+    file.dispatchEvent(new a.w.Event('change', { bubbles: true })); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(a.w.MMPricing.exportData().categories[0].cost, 99);
+    Object.defineProperty(file, 'files', { configurable: true, value: [{ size: 1, text: async () => '{invalid' }] });
+    file.dispatchEvent(new a.w.Event('change', { bubbles: true })); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(a.w.MMPricing.exportData().categories[0].cost, 99);
+  } finally { a.close(); }
+});
+test('Falha ao salvar precificação informa o problema e preserva o armazenamento', async () => {
+  const a = await app({}, true);
+  try { pricingInput(a, '[data-category-field="cost"]', '999'); assert.equal(a.w.MMPricing.save(), false); assert.equal(a.w.localStorage.getItem(a.w.MMPricing.storageKey), null); assert.match(a.doc.querySelector('#pricingSaveStatus').textContent, /Não foi possível salvar/); }
+  finally { a.close(); }
+});
 test('Inicializa catálogo completo sem aba ou carregamento de produtos importados', async () => {
   const a = await app();
   try {

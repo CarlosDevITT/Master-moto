@@ -19,7 +19,7 @@ Para atualizar a base de motos a partir da planilha, execute `./tools/extract-da
 
 ## Ferramentas do Catálogo
 
-- **Backup completo** baixa um JSON com motos, notas, classificações comerciais, notas de componentes, filtros favoritos, colunas, visualização e tema. Ele inclui toda a base, mesmo quando a busca mostra apenas algumas motos.
+- **Backup completo** baixa um JSON com motos, notas, classificações comerciais, notas de componentes, filtros favoritos, colunas, visualização, tema e preferências de precificação. Ele inclui toda a base, mesmo quando a busca mostra apenas algumas motos. Backups antigos sem precificação preservam as preferências atuais da calculadora.
 - **Restaurar backup** permite escolher esse JSON e conferir as quantidades antes de confirmar. Dados inválidos e IDs duplicados são recusados. A base atual é substituída; a versão anterior fica disponível em **Recuperar base anterior**, inclusive após recarregar. Você também pode baixar um backup atual antes da confirmação. Essa recuperação permanece no navegador e não substitui a cópia exportada.
 - **Colunas** permite ocultar informações da tabela. Modelo, seleção e ações permanecem disponíveis. Use **Mostrar todas** para retornar à tabela completa.
 - **Salvar filtro** guarda busca, filtros, ordenação e quantidade por página. Escolha um nome de até 60 caracteres. Salvar novamente com o mesmo nome atualiza o favorito. Escolha um favorito na lista para reaplicá-lo ou use **Remover favorito**.
@@ -27,6 +27,20 @@ Para atualizar a base de motos a partir da planilha, execute `./tools/extract-da
 - **Editar selecionados** aparece na barra de seleção. Selecione motos na tabela ou nos cartões, inclusive em páginas diferentes, e altere categoria, perfil, faixa ou curva. **Manter atual** preserva o campo; as opções automáticas removem apenas os ajustes manuais de perfil/faixa. Fechar ou cancelar não modifica os registros.
 
 Preferências e filtros favoritos permanecem no navegador após recarregar. As gravações de restauração e edição em lote verificam todas as partes antes de atualizar a tela e tentam reverter os dados se uma gravação falhar. Exporte um backup para manter uma cópia fora do navegador.
+
+## Precificação
+
+A aba **Precificação** segue o tema claro/escuro do site e compara ML Premium, ML Clássico, e-commerce 6x, e-commerce 3x e loja. Os dois exemplos iniciais foram adaptados do HTML fornecido; suas taxas são exemplos editáveis, não tarifas oficiais atualizadas.
+
+1. Ajuste as preferências gerais. Comissões deixadas vazias em cada simulação usam essas taxas padrão. Imposto e lucro padrão se aplicam às novas faixas.
+2. Cadastre uma simulação, informe produto, frete, embalagem e outros custos. Configure comissões e tarifas fixas por canal quando necessário.
+3. Defina imposto e margem de lucro nas faixas e compare preços, lucro estimado e composição dos custos. A margem é percentual do preço de venda, não acréscimo sobre o custo.
+4. As alterações válidas são salvas automaticamente neste navegador; **Salvar preferências** grava imediatamente. Valores inválidos exibem erro e preservam o último salvamento válido. Recarregar recupera as simulações, faixas e taxas.
+5. **Exportar/Importar preferências** permite guardar ou transferir um JSON. **Exportar preços CSV** leva todas as comparações para uma planilha. O backup completo do catálogo também inclui a precificação.
+
+O preço é `(custos + tarifa fixa do canal) / (1 - (comissão + taxa operacional + imposto + margem) / 100)`, arredondado para cima ao próximo centavo, real inteiro ou final ,99. Uma soma igual ou superior a 100% não gera preço. O ajuste negativo da loja representa um crédito percentual, conforme o arquivo de origem; configure zero quando esse crédito não existir na sua operação. A conferência de um preço conhecido calcula cada taxa isoladamente, sem somá-la às simulações.
+
+Os dados permanecem no navegador atual, sem sincronização entre dispositivos. Exporte as preferências antes de limpar os dados do navegador. O arquivo HTML original não foi alterado.
 
 ## Verificação
 
