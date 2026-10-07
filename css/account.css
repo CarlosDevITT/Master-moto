@@ -1,0 +1,26 @@
+.auth-blocked > :not(.account-gate):not(script):not(style) { display:none !important; }
+.account-gate { min-height:100vh; display:grid; place-items:center; padding:24px; background:var(--bg); }
+.account-gate[hidden], .account-gate [hidden], .account-session [hidden] { display:none !important; }
+.account-card { width:min(100%,440px); padding:32px; background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:0 20px 60px #00000012; }
+.account-brand { display:grid; place-items:center; width:48px; height:48px; border-radius:12px; background:var(--yellow); color:#0b0e13; font:700 28px 'Space Grotesk',sans-serif; margin-bottom:18px; }
+.account-card h1 { font:600 28px 'Space Grotesk',sans-serif; margin:8px 0; }
+.account-card > p { color:var(--muted); font-size:13px; line-height:1.6; }
+.account-card form { display:grid; gap:16px; margin-top:24px; }
+.account-card label { display:grid; gap:7px; font-size:12px; color:var(--muted); }
+.account-card input { width:100%; min-height:44px; padding:11px 12px; border:1px solid var(--line); border-radius:8px; color:var(--ink); background:var(--surface); }
+.account-card form button { min-height:44px; justify-content:center; }
+.account-links { display:flex; flex-wrap:wrap; gap:14px; }
+.account-links button { padding:4px 0; border:0; background:none; color:var(--ink); text-decoration:underline; text-underline-offset:4px; font-size:12px; cursor:pointer; }
+/* Account controls stay above the workspace, including narrow navigation layouts. */
+.account-session { margin:16px 24px 0; padding:12px 16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); display:flex; align-items:center; flex-wrap:wrap; gap:12px 20px; font-size:12px; }
+.account-session-meta { flex:1; min-width:0; overflow-wrap:anywhere; }
+.account-session strong { color:var(--ink); }
+.account-session p { color:var(--muted); line-height:1.5; margin:4px 0 0; }
+.account-session-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.account-session button { white-space:normal; height:auto; min-height:36px; padding:8px 10px; }
+#accountConflict { flex-basis:100%; border-top:1px solid var(--line); padding-top:10px; }
+#accountConflict button { margin:8px 6px 0 0; }
+#accountSyncStatus[data-kind=conflict], #accountSyncStatus[data-kind=offline], #accountSyncStatus[data-kind=invalid] { color:#9a6500; }
+.dark-mode #accountSyncStatus[data-kind=conflict], .dark-mode #accountSyncStatus[data-kind=offline], .dark-mode #accountSyncStatus[data-kind=invalid] { color:#f4c85b; }
+.account-card input:focus-visible { outline:2px solid var(--yellow); outline-offset:2px; }
+@media(max-width:600px) { .account-card { padding:24px; } .account-session { margin:12px 14px 0; padding:12px; align-items:stretch; } .account-session-meta { flex-basis:100%; } }

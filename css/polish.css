@@ -51,14 +51,13 @@ body.modal-open { overflow: hidden; }
 .data-product-card .data-price { color: var(--ink); }
 .notes-toolbar { gap: 16px; flex-wrap: wrap; }
 .note-card p { color: var(--muted); }
-.tg-form { flex-wrap: wrap; }
 .topbar { gap: 16px; }
 .breadcrumb { min-width: 0; }
-body.dark-mode :is(.search-large, .data-module-toolbar, .data-stat-card, .data-product-card, .data-category-card, .notes-toolbar .search, .note-sort select, .tg-form input, .tg-form select, .custom-year-fields input) { background: var(--surface); color: var(--ink); border-color: var(--line); }
+body.dark-mode :is(.search-large, .data-module-toolbar, .data-stat-card, .data-product-card, .data-category-card, .notes-toolbar .search, .note-sort select, .custom-year-fields input) { background: var(--surface); color: var(--ink); border-color: var(--line); }
 body.dark-mode :is(.search-large input, .search input, .data-search input) { color: var(--ink); }
 body.dark-mode :is(.data-source-badge, .module-status, .filter-summary.has-filters, .note-modal .modal-foot .subtle-btn) { background: #1d2632; color: #b5c0ce; border-color: var(--line); }
 body.dark-mode :is(.form-grid label, .full-field, .note-modal .form-grid label, .note-card-foot strong) { color: var(--ink); }
-body.dark-mode :is(.tg-table th, .module-heading) { background: var(--surface); color: var(--ink); }
+body.dark-mode :is(.module-heading) { background: var(--surface); color: var(--ink); }
 body.dark-mode .data-product-code { color: #f3c865; }
 @media (max-width: 1000px) {
   .sidebar { width: 76px; }
@@ -91,7 +90,6 @@ body.dark-mode .data-product-code { color: #f3c865; }
   .data-module-toolbar select { min-width: 0; width: 100%; }
   .product-import-actions { padding-inline: 12px; }
   .form-grid { grid-template-columns: 1fr; }
-  .tg-form { grid-template-columns: 1fr; }
   .bulk-bar { flex-wrap: wrap; gap: 10px; }
   .bulk-actions, .bulk-stars { flex-wrap: wrap; }
   .bars-chart { gap: 6px; padding-inline: 0; }

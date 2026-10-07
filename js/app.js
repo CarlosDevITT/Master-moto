@@ -2,7 +2,7 @@ const STORAGE_KEY = 'master-motos-records-v1';
 const NOTES_KEY = 'master-motos-notes-v1';
 function readLocalJson(key, fallback) {
   try {
-    const value = JSON.parse(localStorage.getItem(key) || 'null');
+    const value = JSON.parse(MMStorage.getItem(key) || 'null');
     return value ?? fallback;
   } catch (error) {
     return fallback;
@@ -39,7 +39,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const THEME_STORAGE_KEY = 'mm_theme_v1';
 function readTheme() {
-  try { return localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'; } catch (error) { return 'light'; }
+  try { return MMStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'; } catch (error) { return 'light'; }
 }
 function applyTheme(theme) {
   const isDark = theme === 'dark';
@@ -77,7 +77,7 @@ const GUIDE_SCHEMA_VERSION = 1;
 let guideStorageWarningShown = false;
 function readGuideStore() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(GUIDE_STORAGE_KEY) || 'null');
+    const parsed = JSON.parse(MMStorage.getItem(GUIDE_STORAGE_KEY) || 'null');
     return parsed && parsed.schemaVersion === GUIDE_SCHEMA_VERSION && parsed.notes && typeof parsed.notes === 'object' ? parsed : { schemaVersion: GUIDE_SCHEMA_VERSION, notes: {} };
   } catch (error) {
     return { schemaVersion: GUIDE_SCHEMA_VERSION, notes: {} };
@@ -86,7 +86,7 @@ function readGuideStore() {
 let guideStore = readGuideStore();
 function writeGuideStore(next = guideStore) {
   try {
-    localStorage.setItem(GUIDE_STORAGE_KEY, JSON.stringify(next));
+    MMStorage.setItem(GUIDE_STORAGE_KEY, JSON.stringify(next));
     guideStore = next; return true;
   } catch (error) {
     if (!guideStorageWarningShown) { guideStorageWarningShown = true; toast('Não foi possível salvar as notas do guia neste navegador.'); }
@@ -346,10 +346,10 @@ $('.nav').addEventListener('click', event => {
   const button = event.target.closest('[data-view]');
   if (!button) return;
   const view = button.dataset.view;
-  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', titulos: 'titulosView', guia: 'guideView', precificacao: 'pricingView', mercado: 'marketView' };
+  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', guia: 'guideView', precificacao: 'pricingView', mercado: 'marketView' };
   $$('.main > .content').forEach(section => section.classList.toggle('hidden', section.id !== views[view]));
   $$('.nav-item').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-current', item === button ? 'page' : 'false'); });
-  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', titulos: 'Gerador de títulos', guia: 'Guia de componentes', precificacao: 'Precificação', mercado: 'Curva ABC do catálogo' };
+  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', guia: 'Guia de componentes', precificacao: 'Precificação', mercado: 'Curva ABC do catálogo' };
   $('#pageTitle').textContent = labels[view] || 'Catálogo de motos';
   if (view === 'guia') { renderGuideMotoOptions(); renderGuide(); }
 });
@@ -357,7 +357,7 @@ applyTheme(savedTheme);
 $('#themeBtn').addEventListener('click', () => {
   const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
   applyTheme(nextTheme);
-  try { localStorage.setItem(THEME_STORAGE_KEY, nextTheme); } catch (error) { toast('Tema aplicado somente nesta sessão.'); return; }
+  try { MMStorage.setItem(THEME_STORAGE_KEY, nextTheme); } catch (error) { toast('Tema aplicado somente nesta sessão.'); return; }
   toast(nextTheme === 'dark' ? 'Modo escuro ativado' : 'Modo claro ativado');
 });
 

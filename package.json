@@ -5,9 +5,14 @@
   "scripts": {
     "dev": "node tools/serve.cjs",
     "test": "node --test tests/*.test.cjs",
-    "check": "node tools/check.cjs"
+    "check": "node tools/check.cjs",
+    "build:auth": "node tools/build-auth.cjs"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "jsdom": "26.1.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3"
   }
 }

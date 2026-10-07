@@ -64,17 +64,17 @@
     const before = new Map();
     const changed = [];
     try {
-      entries.forEach(([key]) => before.set(key, localStorage.getItem(key)));
+      entries.forEach(([key]) => before.set(key, MMStorage.getItem(key)));
       for (const [key, value] of entries) {
-        if (value === null) localStorage.removeItem(key);
-        else localStorage.setItem(key, key === THEME_STORAGE_KEY ? value : JSON.stringify(value));
+        if (value === null) MMStorage.removeItem(key);
+        else MMStorage.setItem(key, key === THEME_STORAGE_KEY ? value : JSON.stringify(value));
         changed.push(key);
       }
       return true;
     } catch {
       let recovered = true;
       for (const key of changed.reverse()) {
-        try { before.get(key) === null ? localStorage.removeItem(key) : localStorage.setItem(key, before.get(key)); }
+        try { before.get(key) === null ? MMStorage.removeItem(key) : MMStorage.setItem(key, before.get(key)); }
         catch { recovered = false; }
       }
       toast(recovered ? 'Não foi possível salvar. Nenhuma alteração foi aplicada.' : 'Falha ao salvar e recuperar o armazenamento. Mantenha o backup e tente restaurá-lo novamente.');

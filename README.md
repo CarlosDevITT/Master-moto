@@ -4,23 +4,23 @@ Catálogo de aplicações de motos com busca, filtros, cadastro, classificação
 
 ## Executar
 
-Com Node.js instalado, execute `npm run dev` e abra <http://localhost:4173>. O aplicativo é estático e não precisa de dependências para funcionar. Para instalar as dependências de teste, execute `npm ci`.
+Com Node.js instalado, execute `npm run dev` e abra <http://localhost:4173>. O aplicativo usa hospedagem estática e o Supabase para contas e dados. O SDK já está incluído no projeto; `npm ci` instala ferramentas de teste e reconstrução. Confira [o guia do Supabase](docs/SUPABASE.md) antes de publicar.
 
 ## Dados
 
 - A base inicial contém 464 motos, em `js/data.js`, extraídas de `Data/MASTER_MOTOS_v6.xlsx`.
-- Cadastros, exclusões, classificações, notas e preferência de tema são salvos **no navegador atual**. Não existe sincronização com outros dispositivos ou contas.
+- Cadastros, exclusões, classificações, notas, precificação e preferências são salvos **individualmente por conta** no Supabase, com cópia local e sincronização automática entre dispositivos.
 - A aba Produtos importados foi retirada. Os arquivos de origem continuam preservados no repositório.
 - A busca combina termos em qualquer ordem (ex.: `Honda 250 2020`) e considera marca, modelo, cilindrada, motor e ano de aplicação.
-- Notas podem ser exportadas e importadas em JSON. O catálogo filtrado e os títulos podem ser exportados em CSV.
-- **Restaurar base** remove cadastros e notas locais e restaura a planilha original, após confirmação.
+- Notas podem ser exportadas e importadas em JSON. O catálogo filtrado pode ser exportado em CSV.
+- **Restaurar base** substitui os cadastros e notas da conta pela planilha original, após confirmação; a alteração também é sincronizada.
 
 Para atualizar a base de motos a partir da planilha, execute `./tools/extract-data.ps1` no PowerShell. Para conferir uma extração sem sobrescrever a base, use `./tools/extract-data.ps1 -ExportPath ./arquivo-temporario.js`.
 
 ## Ferramentas do Catálogo
 
 - **Backup completo** baixa um JSON com motos, notas, classificações comerciais, notas de componentes, filtros favoritos, colunas, visualização, tema e preferências de precificação. Ele inclui toda a base, mesmo quando a busca mostra apenas algumas motos. Backups antigos sem precificação preservam as preferências atuais da calculadora.
-- **Restaurar backup** permite escolher esse JSON e conferir as quantidades antes de confirmar. Dados inválidos e IDs duplicados são recusados. A base atual é substituída; a versão anterior fica disponível em **Recuperar base anterior**, inclusive após recarregar. Você também pode baixar um backup atual antes da confirmação. Essa recuperação permanece no navegador e não substitui a cópia exportada.
+- **Restaurar backup** permite escolher esse JSON e conferir as quantidades antes de confirmar. Dados inválidos e IDs duplicados são recusados. A base atual é substituída; a versão anterior fica disponível em **Recuperar base anterior**, inclusive após recarregar. Você também pode baixar um backup atual antes da confirmação. Essa recuperação acompanha a conta e não substitui a cópia exportada.
 - **Colunas** permite ocultar informações da tabela. Modelo, seleção e ações permanecem disponíveis. Use **Mostrar todas** para retornar à tabela completa.
 - **Salvar filtro** guarda busca, filtros, ordenação e quantidade por página. Escolha um nome de até 60 caracteres. Salvar novamente com o mesmo nome atualiza o favorito. Escolha um favorito na lista para reaplicá-lo ou use **Remover favorito**.
 - **Tabela / Cartões** muda a visualização mantendo busca, paginação e seleção. Sem preferência manual, o celular usa cartões automaticamente. Cada cartão oferece seleção, edição, notas e classificação de curva.
@@ -30,13 +30,12 @@ Preferências e filtros favoritos permanecem no navegador após recarregar. As g
 
 ## Curva ABC do catálogo e anúncios
 
-A aba **Curva ABC do catálogo** abre na sua base de motos. Avalie cada moto em **1 a 5 estrelas** no catálogo, nos cartões, no cadastro ou no próprio painel. **4–5 estrelas = A; 3 estrelas = B; 1–2 estrelas = C**. Sem avaliação fica pendente; classificações manuais antigas são preservadas até você atribuir estrelas ou limpar a curva. As avaliações são salvas automaticamente no navegador, recuperadas após recarregar e incluídas no backup completo. O painel mostra quantidades por curva, busca, filtro, paginação e exportação das avaliações. **Gerar títulos da curva A** usa somente as motos A do catálogo, ordenadas por estrelas.
+A aba **Curva ABC do catálogo** abre na sua base de motos. Avalie cada moto em **1 a 5 estrelas** no catálogo, nos cartões, no cadastro ou no próprio painel. **4–5 estrelas = A; 3 estrelas = B; 1–2 estrelas = C**. Sem avaliação fica pendente; classificações manuais antigas são preservadas até você atribuir estrelas ou limpar a curva. As avaliações são salvas automaticamente no navegador, recuperadas após recarregar e incluídas no backup completo. O painel mostra quantidades por curva, busca, filtro, paginação e exportação das avaliações.
 
 Na opção **Brasil · referência Fenabrave**, o painel usa o relatório público da Fenabrave, com 77 modelos/famílias publicados nos rankings por segmento de setembro de 2026. A amostra cobre 93,55% dos emplacamentos nacionais acumulados no ano. A curva usa o volume **da amostra publicada**, não o total de peças vendidas no Mercado Livre nem a frota em circulação: A até atingir 80%, B até atingir 95%, C restante. O modelo que cruza o limite permanece na faixa anterior. Filtros não alteram essas classificações.
 
 O painel mostra fonte, período, cobertura, acumulado, mês atual, variação mensal e lacunas no catálogo. A correspondência com aplicações usa nomes exatos e equivalências revisadas em `js/market-engine.js`; cilindradas parecidas não são confundidas. Essa referência nacional não atribui curvas às motos sem avaliação no catálogo. Avaliações e ajustes comerciais não alteram a curva do relatório nacional.
 
-No **Gerador de títulos**, escolha **Curva A do mercado** ou **Ranking de mercado** e informe a peça. A lista é ordenada pelo volume nacional acumulado. Os títulos preservam os anos cadastrados, sem inventar adjetivos de qualidade. Títulos longos são sinalizados e não podem ser copiados/exportados até reduzir o nome da peça. Faixa de valor é um filtro de posicionamento comercial, não uma validação de compatibilidade física. Nenhum anúncio é publicado automaticamente.
 
 ### Atualização automática
 
@@ -44,7 +43,7 @@ No **Gerador de títulos**, escolha **Curva A do mercado** ou **Ranking de merca
 - `.github/workflows/market-data.yml` consulta a página oficial diariamente às 09h UTC, baixa o relatório mais recente e atualiza o JSON apenas após conferir os oito segmentos, posições consecutivas, todas as linhas reconhecidas, totais e duplicações. Segmentos incompletos são recusados; Touring só pode ter menos de dez modelos quando representa o segmento inteiro. Mudanças no formato da fonte geram falha sem substituir a base anterior. O workflow precisa estar na branch padrão do GitHub com Actions e permissão de escrita habilitados. A hospedagem existente foi identificada como GitHub Pages pelos registros de execução do repositório. Após salvar novos dados, o workflow solicita explicitamente uma publicação do Pages; também tenta novamente quando a última publicação concluída não corresponde ao commit atual. Isso evita depender de um push do robô para iniciar outra execução. As alterações deste workflow estão locais e ainda precisam ser enviadas à branch padrão; sua execução modificada não foi validada remotamente.
 - Para atualizar manualmente: instale `pypdf==6.10.0` e execute `python tools/update-market.py`. Para repetir a extração de um PDF oficial local: `python tools/update-market.py --pdf caminho.pdf --period AAAA-MM`. Períodos anteriores ao salvo são recusados.
 
-O catálogo ocupa mais largura e não limita a altura da lista. Exibe 50 motos por padrão e oferece 100 por página, com preferência salva no navegador e incluída no backup completo.
+O catálogo ocupa mais largura e não limita a altura da lista. Exibe 50 motos por padrão e oferece 100 por página, com preferência salva na conta, sincronizada e incluída no backup completo.
 
 ## Precificação
 
@@ -62,7 +61,7 @@ A organização também é salva: produtos expandidos/recolhidos, preferências 
 
 O preço é `(custos + tarifa fixa do canal) / (1 - (comissão + taxa operacional + imposto + margem) / 100)`, arredondado para cima ao próximo centavo, real inteiro ou final ,99. Uma soma igual ou superior a 100% não gera preço. O ajuste negativo da loja representa um crédito percentual, conforme o arquivo de origem; configure zero quando esse crédito não existir na sua operação. A conferência de um preço conhecido calcula cada taxa isoladamente, sem somá-la às simulações.
 
-Os dados permanecem no navegador atual, sem sincronização entre dispositivos. Exporte as preferências antes de limpar os dados do navegador. O arquivo HTML original não foi alterado.
+Os dados e a organização da precificação são guardados por conta e sincronizados automaticamente no Supabase. O indicador da conta informa quando há alterações apenas neste dispositivo. Exporte um backup antes de limpar o navegador se houver envios pendentes. O arquivo HTML original não foi alterado.
 
 ## Verificação
 
@@ -72,9 +71,9 @@ Os testes usam um DOM simulado; não substituem a inspeção visual em um navega
 
 ## Integrações
 
-O repositório não contém integração com Supabase, autenticação ou servidor de aplicação. Os projetos Supabase disponíveis no conector não foram identificados como pertencentes ao Master Motos. A consulta Vercel não encontrou projeto ligado ao repositório. Nenhum banco remoto foi alterado e nenhuma publicação foi feita nesta implementação.
+O projeto possui login, cadastro por e-mail, recuperação de senha e sincronização individual no Supabase **Master-moto**. A tabela, políticas de isolamento e função de gravação já foram criadas no projeto confirmado. Preferências, catálogo, estrelas, notas, favoritos, precificação e organização dos painéis acompanham a conta. Dados locais antigos só são importados mediante escolha explícita da conta de destino.
 
-Para hospedar, publique os arquivos estáticos da raiz. A publicação não transforma o armazenamento local em banco compartilhado. A integração com Bling mencionada no projeto permanece futura.
+Consulte [o guia de ativação](docs/SUPABASE.md) para conferir os endereços dos e-mails e SMTP antes da publicação. A entrega real dos e-mails e a inspeção visual em navegador permanecem pendentes. Nenhuma publicação foi realizada nesta implementação. A integração com Bling permanece futura.
 
 ## Correções e facilidades da revisão
 
@@ -82,7 +81,7 @@ Para hospedar, publique os arquivos estáticos da raiz. A publicação não tran
 - **Ver aplicações** no ranking filtra pela família completa, incluindo equivalências revisadas; esse filtro pode ser salvo nos favoritos. Cartões identificam curvas automáticas e ajustes manuais.
 - **Cadastrar** no ranking abre o formulário preenchido. CG 160 Fan (2025), Biz 125 (2025), Pop 110i ES (2025) e NXR 160 Bros (2026) têm referências do fabricante. Outros modelos exigem conferência de cilindrada, motor, categoria e anos. O cadastro não afirma compatibilidade universal de peças.
 - Paginação e ordenação atualizam o catálogo sem refazer os painéis de notas e estatísticas. A precificação mantém entradas rápidas, comparação imediata e organização salva.
-- CSVs do catálogo, títulos, preços e ranking compartilham a neutralização de fórmulas em campos de texto, incluindo espaços e sinais iniciais. Números negativos continuam números. Alguns importadores podem remover essa proteção; confira antes de reexportar.
+- CSVs do catálogo, preços e ranking compartilham a neutralização de fórmulas em campos de texto, incluindo espaços e sinais iniciais. Números negativos continuam números. Alguns importadores podem remover essa proteção; confira antes de reexportar.
 - Execute `python -B tests/update_market_test.py` para testar extrações incompletas, linhas ilegíveis e valores mensais zero. Os testes exigem `pypdf==6.10.0`; o workflow instala essa versão antes de executá-los.
 
 Referências dos modelos: [CG 160 2025](https://saladeimprensa.honda.com.br/releases/honda-cg-160-2025-nova-geracao-da-motocicleta-preferida-dos-brasileiros-traz-importantes), [Biz 125](https://saladeimprensa.honda.com.br/motocicletas/street/biz-125), [Pop 110i](https://saladeimprensa.honda.com.br/motocicletas/street/pop-110i) e [Bros 2026](https://prodsalaimp.honda.com.br/releases/honda-nxr-160-bros-2026-nova-cor-para-versao-cbs). A solicitação automática da publicação segue a [API oficial do GitHub Pages](https://docs.github.com/en/rest/pages/pages#request-a-github-pages-build).

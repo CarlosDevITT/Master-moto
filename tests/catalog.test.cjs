@@ -51,7 +51,7 @@ test('Conferir taxas vem antes dos produtos, abre por padrão e respeita painel 
   const b = await app(seed); try { assert.equal(b.doc.querySelector('.pricing-fee-check').open, false); } finally { b.close(); }
 });
 
-test('Estrelas classificam o catálogo, persistem e acompanham backup e gerador', async () => {
+test('Estrelas classificam o catálogo, persistem e acompanham o backup', async () => {
   const a = await app(); let seed;
   try {
     const record = a.w.MOTO_DATA[0], id = record.id;
@@ -65,10 +65,6 @@ test('Estrelas classificam o catálogo, persistem e acompanham backup e gerador'
     assert.equal(a.doc.querySelector('#nationalReference').classList.contains('hidden'), true);
     assert.equal(a.doc.querySelectorAll('#catalogAbcRows tr[data-abc-id]').length, 50);
     assert.match(a.doc.querySelector('#catalogAbcCount').textContent, /464/);
-    a.doc.querySelector('#catalogAbcTitles').click(); input(a.w, 'tgPeca', 'Filtro');
-    assert.equal(a.doc.querySelector('#tgEscopo').value, 'catalogoA');
-    assert.equal(a.doc.querySelectorAll('#tgBody .tg-title').length, 1);
-    assert.match(a.doc.querySelector('#tgBody .tg-title').textContent, /CRF50F/);
     a.doc.querySelector('[data-view="catalogo"]').click();
     for (const [stars, curve] of [[4,'A'],[3,'B'],[2,'C'],[1,'C']]) {
       a.doc.querySelector(`#motoRows [data-rating-moto="${id}"][data-rating-value="${stars}"]`).click();
@@ -371,15 +367,17 @@ test('Exclusão permanece após recarregar e limpa notas e perfil associados', a
   try { assert.equal(Number(b.doc.querySelector('#sideCount').textContent), b.w.MOTO_DATA.length - 1); }
   finally { b.close(); }
 });
-test('Navegação sempre exibe uma única seção entre catálogo, notas, visão geral e parâmetros', async () => {
+test('Navegação sempre exibe uma única seção entre as abas disponíveis sem o gerador de títulos', async () => {
   const a = await app();
   try {
-    for (const name of ['titulos', 'dashboard', 'notas', 'catalogo']) {
+    for (const name of ['dashboard', 'notas', 'catalogo', 'guia', 'precificacao', 'mercado']) {
       a.doc.querySelector(`[data-view="${name}"]`).click();
       const visible = [...a.doc.querySelectorAll('.main > .content')].filter(el => !el.classList.contains('hidden'));
       assert.equal(visible.length, 1, name);
     }
     assert.equal(a.doc.querySelectorAll('[data-view="data-import"]').length, 0);
+    assert.equal(a.doc.querySelectorAll('[data-view="titulos"], #titulosView, #tgEscopo, #marketTitles, #catalogAbcTitles').length, 0);
+    assert.equal(a.w.MMPerfil.refreshTitles, undefined);
   } finally { a.close(); }
 });
 test('Cadastro salva perfil na moto nova e rejeita período inválido', async () => {
@@ -506,20 +504,14 @@ test('Painel ABC carrega fonte, mantém curva ao filtrar e abre aplicações cad
     assert.ok([...a.doc.querySelectorAll('#motoRows .model-cell')].every(el => el.textContent.includes('XRE 190')));
   } finally { a.close(); }
 });
-test('Curva do catálogo é independente do mercado e gerador de referência preserva anos', async () => {
+test('Curva do catálogo é independente do mercado', async () => {
   const a = await app();
   try {
     const rec = a.w.MOTO_DATA.find(r => r.modelo === 'XRE 190');
     assert.equal(a.w.MMPerfil.get(rec).estrela, '');
     a.w.MMPerfil.replaceData({ [rec.id]: { estrela: 'C' } });
     assert.equal(a.w.MMPerfil.get(rec).estrela, 'C'); assert.equal(a.w.MMMarket.get(rec).curve, 'A');
-    a.doc.querySelector('#marketTitles').click(); assert.equal(a.doc.querySelector('#tgEscopo').value, 'mercadoA');
-    input(a.w, 'tgPeca', 'Filtro de Óleo');
-    const titles = [...a.doc.querySelectorAll('#tgBody .tg-title')].map(el => el.textContent);
-    assert.ok(titles.length > 0); assert.ok(titles.every(t => /\d{4}-\d{4}/.test(t)));
-    input(a.w, 'tgPeca', 'Uma peça com um nome extremamente extenso que não cabe no limite de título permitido');
-    assert.ok([...a.doc.querySelectorAll('#tgBody .tg-copy')].every(button => button.disabled));
-    assert.match(a.doc.querySelector('#tgInfo').textContent, /acima do limite/);
+
   } finally { a.close(); }
 });
 test('Ranking salvo continua disponível sem rede e informa a falha de atualização', async () => {

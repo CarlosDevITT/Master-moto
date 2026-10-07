@@ -8,7 +8,7 @@
   const uid = prefix => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   let data = E.defaults(), timer, savedAt = null, loadError = false;
   try {
-    const stored = localStorage.getItem(KEY);
+    const stored = MMStorage.getItem(KEY);
     if (stored) { data = E.validate(JSON.parse(stored)); savedAt = 'anteriormente'; }
   } catch { loadError = true; }
   let lastValid = clone(data);
@@ -40,7 +40,7 @@
   function persistValid(manual = false, layout = false) {
     try {
       const { value, problems } = snapshotValid();
-      localStorage.setItem(KEY, JSON.stringify(value)); lastValid = clone(value);
+      MMStorage.setItem(KEY, JSON.stringify(value)); lastValid = clone(value);
       savedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       if (!layout || !timer) setStatus(problems.length ? `Valores válidos salvos · campos inválidos em: ${problems.join('; ')}` : `Preferências salvas neste navegador · ${savedAt}`, problems.length > 0);
       if (manual) toast(problems.length ? 'Produtos válidos salvos. Revise os campos indicados.' : 'Preferências de precificação salvas.');
@@ -284,7 +284,7 @@
       if (parsed.format !== 'master-motos-pricing' || parsed.schemaVersion !== 1) throw new Error('Escolha um arquivo de preferências da precificação.');
       const next = E.validate(parsed.data);
       if (!confirm(`Importar ${next.categories.length} simulação(ões) e substituir suas preferências?`)) return;
-      localStorage.setItem(KEY, JSON.stringify(next)); replaceData(next); toast('Preferências importadas e salvas.');
+      MMStorage.setItem(KEY, JSON.stringify(next)); replaceData(next); toast('Preferências importadas e salvas.');
     } catch (error) { toast(error instanceof SyntaxError ? 'Arquivo JSON inválido.' : error.message || 'Não foi possível importar.'); }
     finally { event.target.value = ''; }
   });

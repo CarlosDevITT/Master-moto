@@ -7,15 +7,3 @@
 .bulk-stars{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-right:14px;font-size:12px}
 .bulk-star{background:#fff4c8;color:#765600;border:1px solid #ebcf72;border-radius:8px;padding:7px 10px;font-weight:700;font-size:11px}.bulk-star:hover{background:#f4d875}
 .perfil-note{margin:16px 0 0;font-size:12px;color:var(--muted)}
-.tg-card{padding-bottom:6px}
-.tg-form{display:grid;grid-template-columns:2fr 1fr 1.2fr 1.2fr auto;gap:14px;align-items:end;padding:18px}
-.tg-form label{display:grid;gap:5px;font-size:11px;font-weight:700;color:var(--muted)}
-.tg-form input:not([type=checkbox]),.tg-form select{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 11px;outline:0}
-.tg-table{min-width:760px}.tg-title{font-family:'Space Grotesk';font-weight:600;white-space:normal}
-.tg-len{color:var(--muted);font-size:12px}.tg-len.over{color:#b43b3b;font-weight:700}
-@media(max-width:1000px){.tg-form{grid-template-columns:1fr 1fr}}
-.curve-card .rank-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0 20px 22px}
-.curve-card .rank-row{display:block;background:#fafbfc;border:1px solid var(--line);border-radius:12px;padding:14px 15px;min-height:94px}
-.curve-card .rank-no{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:8px;background:var(--yellow);color:#5d4500;font-weight:800;font-family:'Space Grotesk';margin-bottom:10px}
-.curve-card .rank-name{display:block;font-size:14px}.curve-card .rank-name strong{display:block}.curve-card .rank-name small{display:block;margin-top:5px;line-height:1.3}
-@media(max-width:620px){.curve-card .rank-list{grid-template-columns:1fr;padding-left:12px;padding-right:12px}}

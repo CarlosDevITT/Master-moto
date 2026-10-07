@@ -1,14 +1,12 @@
-/* Perfil de uso, faixa de valor, estrela A/B/C (moto de curva) e gerador de títulos. */
+/* Perfil de uso, faixa de valor, estrela A/B/C (moto de curva). */
 window.MMPerfil = (function () {
   const CFG = window.MM_PERFIL_CFG;
   const KEY = 'master-motos-perfil-v1';
   const ESTRELAS = ['A', 'B', 'C'];
   const faixaById = Object.fromEntries(CFG.faixas.map((f) => [f.id, f]));
-  const pecaById = Object.fromEntries(CFG.pecas.map((p) => [p.id, p]));
   let over = {};
-  try { const parsed = JSON.parse(localStorage.getItem(KEY) || '{}'); over = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}; } catch (e) { over = {}; }
+  try { const parsed = JSON.parse(MMStorage.getItem(KEY) || '{}'); over = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}; } catch (e) { over = {}; }
   const persist = (next = over) => { if (!MMStore.commit([[KEY, next]])) return false; over = next; return true; };
-  const norm = (v) => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const curveForRating = n => n >= 4 ? 'A' : n === 3 ? 'B' : n >= 1 ? 'C' : '';
   function rating(r) { const value = over[r.id]?.rating; return Number.isInteger(value) && value >= 1 && value <= 5 ? value : 0; }
   function catalogCurve(r) { return curveForRating(rating(r)) || over[r.id]?.estrela || ''; }
@@ -77,49 +75,6 @@ window.MMPerfil = (function () {
     return items;
   }
 
-  /* ---------- Parâmetros para títulos ---------- */
-  function adjetivos(r, nivelId) {
-    const g = get(r);
-    const ranking = ['economica', 'media', 'alta', 'premium'];
-    const allowed = nivelId ? (pecaById[nivelId]?.faixas || [g.faixa]) : [g.faixa];
-    const faixaAdj = allowed.includes(g.faixa)
-      ? g.faixa
-      : allowed
-          .map((faixa) => ({ faixa, distance: Math.abs(ranking.indexOf(faixa) - ranking.indexOf(g.faixa || 'media')) }))
-          .sort((a, b) => a.distance - b.distance)[0]?.faixa || g.faixa;
-    const base = faixaById[faixaAdj].adj.slice();
-    if (['alta', 'premium'].includes(faixaAdj)) base[1] = CFG.adjPerfil[g.perfil] || base[1];
-    return base;
-  }
-  function titulo(r, peca, nivelId) {
-    const [a1, a2] = adjetivos(r, nivelId);
-    const nome = norm(r.nomeTitulo).includes(norm(r.marca)) ? r.nomeTitulo : `${r.marca} ${r.nomeTitulo}`;
-    const anos = r.anoInicial && r.anoFinal ? (r.anoInicial === r.anoFinal ? `${r.anoInicial}` : `${r.anoInicial}-${r.anoFinal}`) : '';
-    const build = (o) => [peca, o.a1 && a1, o.a2 && a2, o.marca ? nome : r.nomeTitulo, o.anos && anos].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-    const steps = [{ a1: 0, a2: 0, marca: 1, anos: 1 }, { a1: 0, a2: 0, marca: 0, anos: 1 }];
-    for (const s of steps) { const t = build(s); if (t.length <= CFG.limiteTitulo) return t; }
-    return build(steps[steps.length - 1]);
-  }
-  function nivelPorPreco(p) { const n = Number(p); if (!n) return ''; return CFG.pecas.find((x) => n <= x.ate).id; }
-  function listaTitulos() {
-    const peca = $('#tgPeca').value.trim(); const preco = $('#tgPreco').value;
-    const nivel = $('#tgNivel').value || nivelPorPreco(preco);
-    const escopo = $('#tgEscopo').value; const so = $('#tgCompat').checked;
-    let base = escopo === 'filtradas' ? filtered() : escopo === 'estrelas' ? records.filter((r) => get(r).estrela) : records.slice();
-    if (escopo === 'catalogoA') base = records.filter(r => catalogCurve(r) === 'A').sort((a,b) => rating(b) - rating(a) || a.modelo.localeCompare(b.modelo, 'pt-BR'));
-    if (escopo === 'mercadoA' || escopo === 'mercado') base = base.filter(r => window.MMMarket?.get(r) && (escopo !== 'mercadoA' || window.MMMarket.get(r).curve === 'A')).sort((a, b) => window.MMMarket.get(b).units - window.MMMarket.get(a).units);
-    if (nivel && so) base = base.filter((r) => pecaById[nivel].faixas.includes(get(r).faixa));
-    return { peca, nivel, rows: base.map((r) => ({ r, t: peca ? titulo(r, peca, nivel) : '' })) };
-  }
-  function renderTitulos() {
-    if (!$('#tgBody')) return;
-    const { peca, nivel, rows } = listaTitulos();
-    const oversized = rows.filter(row => row.t.length > CFG.limiteTitulo).length;
-    $('#tgInfo').textContent = !peca ? 'Informe o nome da peça para gerar os títulos.' : `${rows.length} moto(s) para ${peca}${oversized ? ` · ${oversized} título(s) acima do limite: reduza o nome da peça` : ''}${rows.length > 200 ? ' · exibindo os primeiros 200; exportação inclui os títulos válidos' : ''}`;
-    $('#tgBody').innerHTML = rows.slice(0, 200).map(({ r, t }, i) => { const g = get(r); const f = faixaById[g.faixa]; return `<tr><td>${esc(r.marca)} ${esc(r.modelo)}</td><td><span class="faixa-badge" style="--c:${f.cor}">${esc(f.label)}</span></td><td>${g.estrela ? '★ ' + g.estrela : ''}</td><td class="tg-title">${esc(t)}</td><td class="tg-len ${t.length > CFG.limiteTitulo ? 'over' : ''}">${t ? t.length : ''}</td><td><button class="subtle-btn tg-copy" data-i="${i}" ${t && t.length <= CFG.limiteTitulo ? '' : 'disabled'}>Copiar</button></td></tr>`; }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:#8a909b">Nenhuma moto para os critérios escolhidos.</td></tr>';
-    renderTitulos.last = rows;
-  }
-
   /* ---------- Painel da visão geral ---------- */
   function renderDash() {
     const host = $('#perfilDash'); if (!host) return;
@@ -130,20 +85,13 @@ window.MMPerfil = (function () {
     host.innerHTML = `<div class="card-heading"><div><span class="eyebrow">PERFIL DE COMPRA</span><h2>Motos por faixa de valor</h2></div><span class="card-note">CURVA A ${est.A} · CURVA B ${est.B} · CURVA C ${est.C}</span></div><div class="rank-list">${CFG.faixas.map((f, i) => `<div class="rank-row"><span class="rank-no">${i + 1}</span><span class="rank-name">${esc(f.label)} <small style="color:var(--muted)">${esc(f.faixa)}</small></span><span class="rank-count">${cont[f.id]}</span><div class="rank-bar"><i style="width:${Math.round(cont[f.id] / max * 100)}%;background:${f.cor}"></i></div></div>`).join('')}</div><p class="perfil-note">Perfis: ${CFG.perfis.map((p) => `${esc(p)} ${perf[p] || 0}`).join(' · ')}</p>`;
   }
 
-  function showView(view) {
-    const t = $('#titulosView'); if (!t) return;
-    t.classList.toggle('hidden', view !== 'titulos');
-    if (view !== 'guia') $('#guideView')?.classList.add('hidden');
-    if (view === 'titulos') { ['#catalogView', '#dashboardView', '#notesView'].forEach((s) => $(s)?.classList.add('hidden')); $('#pageTitle').textContent = 'Gerador de títulos'; renderTitulos(); }
-  }
-
   function init() {
     document.addEventListener('click', event => {
       const button = event.target.closest('[data-rating-moto]'); if (!button) return;
       const id = Number(button.dataset.ratingMoto), value = Number(button.dataset.ratingValue);
       const host = button.closest('#catalogAbcRows, #catalogCards, #motoRows')?.id;
       if (!rate(id, value)) return;
-      render(); if (!$('#titulosView')?.classList.contains('hidden')) renderTitulos();
+      render();
       document.querySelector(`${host ? '#' + host + ' ' : ''}[data-rating-moto="${id}"][data-rating-value="${value}"]`)?.focus();
     });
     const opt = (list) => list.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
@@ -171,31 +119,8 @@ window.MMPerfil = (function () {
 
     /* painel */
     $('#dashboardView').insertAdjacentHTML('beforeend', '<article class="chart-card" id="perfilDash" style="margin-top:16px"></article>');
-    /* gerador de títulos */
-    $('.nav').insertAdjacentHTML('beforeend', '<button class="nav-item" data-view="titulos"><span class="nav-icon">✎</span> Gerador de títulos</button>');
 
-    $('#notesView').insertAdjacentHTML('afterend', `<section class="content hidden" id="titulosView"><div class="hero-row"><div><p class="eyebrow">MÓDULO 03 · ANÚNCIOS</p><h1>Gerador de títulos</h1><p class="lede">Combine a peça com o perfil da moto: peça simples para moto simples, peça premium para moto de valor alto.</p></div></div>
-<div class="workspace-card tg-card"><div class="tg-form"><label>Nome da peça<input id="tgPeca" placeholder="Ex.: Pastilha de Freio Dianteira"></label><label>Preço da peça (R$)<input id="tgPreco" type="number" min="0" placeholder="Opcional"></label><label>Nível da peça<select id="tgNivel"><option value="">Automático (preço ou moto)</option>${opt(CFG.pecas.map((p) => [p.id, p.label]))}</select></label><label>Motos<select id="tgEscopo"><option value="filtradas">Filtradas no catálogo</option><option value="estrelas">Só com ★ (A, B, C)</option><option value="todas">Todas</option></select></label><label class="check-filter"><input id="tgCompat" type="checkbox" checked> Filtrar faixa de valor da moto</label></div>
-<div class="table-meta"><span id="tgInfo"></span><div class="table-meta-actions"><button class="subtle-btn" id="tgCopyAll">Copiar todos</button><button class="subtle-btn" id="tgCsv">↧ Baixar CSV</button></div></div>
-<div class="table-wrap"><table class="tg-table"><thead><tr><th>Moto</th><th>Faixa</th><th>★</th><th>Título sugerido</th><th>Letras</th><th></th></tr></thead><tbody id="tgBody"></tbody></table></div></div>
-<div class="workspace-card tg-card" style="margin-top:16px"><div class="module-heading"><div><span class="eyebrow">REGRA</span><h2>Moto × peça</h2><p>As faixas orientam o posicionamento comercial. A aplicação da peça precisa ser confirmada.</p></div></div><div class="table-wrap"><table class="tg-table"><thead><tr><th>Faixa da moto</th><th>Valor de referência</th><th>Peça indicada</th><th>Adjetivos no título</th></tr></thead><tbody>${CFG.faixas.map((f) => `<tr><td><span class="faixa-badge" style="--c:${f.cor}">${esc(f.label)}</span></td><td>${esc(f.faixa)}</td><td>${CFG.pecas.filter((p) => p.faixas.includes(f.id)).map((p) => esc(p.label)).join(' ou ')}</td><td>${f.adj.map(esc).join(', ')}</td></tr>`).join('')}</tbody></table></div></div></section>`);
-    ['#tgPeca', '#tgPreco', '#tgNivel', '#tgEscopo', '#tgCompat'].forEach((s) => $(s).addEventListener('input', renderTitulos));
-    $('#tgBody').addEventListener('click', async (e) => { const b = e.target.closest('.tg-copy'); if (!b) return; const row = renderTitulos.last[Number(b.dataset.i)]; try { await navigator.clipboard.writeText(row.t); toast('Título copiado'); } catch (err) { toast('Não foi possível copiar'); } });
-    $('#tgCopyAll').addEventListener('click', async () => { const t = (renderTitulos.last || []).map((x) => x.t).filter(t => t && t.length <= CFG.limiteTitulo).join('\n'); if (!t) return toast('Nada para copiar'); try { await navigator.clipboard.writeText(t); toast('Títulos copiados'); } catch (err) { toast('Não foi possível copiar'); } });
-    $('#tgCsv').addEventListener('click', () => { const rows = (renderTitulos.last || []).filter((x) => x.t && x.t.length <= CFG.limiteTitulo); if (!rows.length) return toast('Nada para exportar'); const csv = '\uFEFF' + [['Marca', 'Modelo', 'Faixa', 'Estrela', 'Título'], ...rows.map(({ r, t }) => [r.marca, r.modelo, faixaById[get(r).faixa].label, get(r).estrela, t])].map((l) => l.map(MMCsv.cell).join(';')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'master-motos-titulos.csv'; a.click(); URL.revokeObjectURL(a.href); });
-    const paramsNav = $('[data-view="titulos"]');
-    if (paramsNav) paramsNav.innerHTML = '<span class="nav-icon">✎</span> Gerador de títulos';
-    const paramsView = $('#titulosView');
-    if (paramsView) {
-      const heading = paramsView.querySelector('h1');
-      const lede = paramsView.querySelector('.lede');
-      if (heading) heading.textContent = 'Gerador de títulos';
-      if (lede) lede.textContent = 'Gere títulos com peça, modelo e anos cadastrados. Priorize a curva do mercado e confirme a compatibilidade antes de publicar.';
-      $('#tgEscopo').insertAdjacentHTML('beforeend', '<option value="mercadoA">Curva A do mercado</option><option value="mercado">Ranking de mercado</option>');
-      paramsView.insertAdjacentHTML('afterbegin', '<div class="workspace-card curve-card" style="margin-bottom:16px"><div class="module-heading"><div><span class="eyebrow">CLASSIFICAÇÃO DE CURVA</span><h2>Parâmetros de curva</h2><p>Use a curva da moto como referência na montagem do título.</p></div></div><div class="rank-list"><div class="rank-row"><span class="rank-no">A</span><span class="rank-name"><strong>CURVA A</strong><small style="color:var(--muted)">Maior prioridade comercial</small></span></div><div class="rank-row"><span class="rank-no">B</span><span class="rank-name"><strong>CURVA B</strong><small style="color:var(--muted)">Prioridade comercial intermediária</small></span></div><div class="rank-row"><span class="rank-no">C</span><span class="rank-name"><strong>CURVA C</strong><small style="color:var(--muted)">Prioridade comercial básica</small></span></div></div></div>');
-    }
-    $('.nav').addEventListener('click', event => { const b = event.target.closest('[data-view]'); if (b) showView(b.dataset.view); });
   }
 
-  return { rating, catalogCurve, ratingMarkup, rate, formData, refreshTitles: renderTitulos, exportData() { return JSON.parse(JSON.stringify(over)); }, replaceData(data) { over = JSON.parse(JSON.stringify(data)); }, saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { return persist({}); }, remove(ids) { const next = { ...over }; ids.forEach(id => delete next[id]); return persist(next); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
+  return { rating, catalogCurve, ratingMarkup, rate, formData, exportData() { return JSON.parse(JSON.stringify(over)); }, replaceData(data) { over = JSON.parse(JSON.stringify(data)); }, saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { return persist({}); }, remove(ids) { const next = { ...over }; ids.forEach(id => delete next[id]); return persist(next); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
 })();
