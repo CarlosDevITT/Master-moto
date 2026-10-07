@@ -67,6 +67,8 @@ Os dados e a organização da precificação são guardados por conta e sincroni
 
 O visual usa grafite e amarelo, com componentes consistentes no login, catálogo, notas, visão geral, painel ABC e precificação. `css/upgrade.css` concentra as cores, composição, espaçamentos e adaptações por tamanho de tela. O símbolo em `assets/brand-mark.svg` acompanha a identidade do favicon. Ícones de navegação usam SVG; a indicação da página atual também está disponível para leitores de tela. As fontes possuem alternativas locais quando a conexão com o serviço de fontes falha.
 
+O símbolo da marca reúne uma ficha de catálogo e uma moto; o favicon usa a mesma composição. O botão ao lado do título da página recolhe ou expande o menu. Em computador e tablet, o modo recolhido mantém os ícones acessíveis; no celular, oculta a navegação até a próxima expansão. A preferência é salva na conta, sincronizada e incluída nos backups, preservando a escolha após recarregar. Se a gravação falhar, o menu mantém o estado anterior.
+
 O upgrade visual foi conferido no Edge sem janela, carregando os arquivos locais com dados de demonstração. As cinco abas visíveis foram verificadas em 1440, 768 e 390 pixels, sem erros de JavaScript ou transbordamento horizontal da página. Login, tema escuro e formulário de cadastro também foram inspecionados. Essa conferência visual não utiliza contas reais nem verifica a entrega de e-mails.
 
 `npm test` valida inicialização, navegação, busca, paginação, cadastro, classificação, notas, exclusão simples e em lote, persistência após recarga, filtros favoritos, colunas, cartões, backups, recuperação, edição em lote, cancelamento e falhas de armazenamento. `npm run check` verifica a sintaxe dos arquivos JavaScript e os recursos locais do HTML.

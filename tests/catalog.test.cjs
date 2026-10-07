@@ -380,6 +380,31 @@ test('Navegação sempre exibe uma única seção entre as abas disponíveis sem
     assert.equal(a.w.MMPerfil.refreshTitles, undefined);
   } finally { a.close(); }
 });
+test('Barra lateral recolhe, persiste após recarga, acompanha backup e preserva estado se a gravação falhar', async () => {
+  const a=await app(); let seed;
+  try {
+    a.doc.getElementById('sidebarToggle').click();
+    assert.ok(a.doc.body.classList.contains('sidebar-collapsed'));
+    assert.equal(a.doc.getElementById('sidebarToggle').getAttribute('aria-expanded'),'false');
+    assert.equal(a.w.MMCatalogTools.snapshot().preferences.sidebarCollapsed,true);
+    seed={'mm-catalog-preferences-v1':a.w.localStorage.getItem('mm-catalog-preferences-v1')};
+  } finally {a.close();}
+  const b=await app(seed);
+  try {
+    assert.ok(b.doc.body.classList.contains('sidebar-collapsed'));
+    b.doc.getElementById('sidebarToggle').click();
+    assert.equal(b.doc.body.classList.contains('sidebar-collapsed'),false);
+    assert.equal(b.doc.getElementById('sidebarToggle').getAttribute('aria-label'),'Recolher menu');
+    const before=b.w.localStorage.getItem('mm-catalog-preferences-v1');
+    b.w.Storage.prototype.setItem=()=>{throw Error('quota');};
+    b.doc.getElementById('sidebarToggle').click();
+    assert.equal(b.doc.body.classList.contains('sidebar-collapsed'),false);
+    assert.equal(b.w.localStorage.getItem('mm-catalog-preferences-v1'),before);
+    Object.defineProperty(b.w,'innerWidth',{value:390,configurable:true});
+    b.w.MMCatalogTools.restoreBackup({...b.w.MMCatalogTools.snapshot(),preferences:{sidebarCollapsed:true}},false);
+    assert.equal(b.doc.getElementById('sidebarNav').hidden,false,'Falha de gravação não oculta o menu');
+  } finally {b.close();}
+});
 test('Cadastro salva perfil na moto nova e rejeita período inválido', async () => {
   const a = await app();
   try {

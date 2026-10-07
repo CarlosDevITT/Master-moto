@@ -256,3 +256,33 @@ body.dark-mode #pricingView { --pricing-good:#7cd4a7; }
   .account-card { padding:26px 22px; }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; animation:none !important; scroll-behavior:auto !important; } }
+
+/* The same saved menu preference works on desktop, tablet and phone. */
+.topbar-leading { display:flex; align-items:center; gap:14px; min-width:0; }
+.topbar-leading .breadcrumb { overflow:hidden; }
+.topbar-leading .breadcrumb strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sidebar-toggle { flex-shrink:0; }
+.nav[hidden] { display:none !important; }
+@media(min-width:621px) {
+  .sidebar { width:224px; padding:28px 16px 22px; }
+  .sidebar .brand { padding:0 10px 34px; }
+  .sidebar .brand > div { display:block; }
+  .sidebar .nav::before { display:block; }
+  .sidebar .nav-item { font-size:12px; justify-content:flex-start; padding:12px; }
+  .sidebar .nav-count { display:inline-block; }
+  .sidebar .sidebar-foot { display:grid; }
+  body.sidebar-collapsed .sidebar { width:76px; padding:24px 10px; }
+  body.sidebar-collapsed .sidebar .brand { padding:0 7px 30px; }
+  body.sidebar-collapsed .sidebar .brand > div,
+  body.sidebar-collapsed .sidebar .nav::before,
+  body.sidebar-collapsed .sidebar .nav-count,
+  body.sidebar-collapsed .sidebar .sidebar-foot { display:none; }
+  body.sidebar-collapsed .sidebar .nav-item { font-size:0; justify-content:center; padding:12px; gap:0; }
+  body.sidebar-collapsed .sidebar .nav-icon { width:20px; height:20px; }
+}
+@media(max-width:620px) {
+  .topbar-leading { gap:10px; }
+  body.sidebar-collapsed .sidebar .brand { padding-bottom:0; }
+  .breadcrumb strong { font-size:12px; }
+  .top-actions { gap:8px; }
+}

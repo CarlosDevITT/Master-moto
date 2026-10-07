@@ -56,4 +56,16 @@
   updateCurrent();
   document.querySelector('.nav').addEventListener('click',updateCurrent);
   document.getElementById('themeBtn').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20.5 13.2A8.6 8.6 0 0 1 10.8 3.5 8.6 8.6 0 1 0 20.5 13.2Z" stroke-linejoin="round"/></svg>';
+  const sidebarButton=document.getElementById('sidebarToggle'), nav=document.getElementById('sidebarNav');
+  function refreshSidebar() {
+    const collapsed=document.body.classList.contains('sidebar-collapsed');
+    const label=collapsed?'Expandir menu':'Recolher menu';
+    sidebarButton.setAttribute('aria-expanded',String(!collapsed));
+    sidebarButton.setAttribute('aria-label',label);sidebarButton.title=label;
+    sidebarButton.querySelector('[data-sidebar-chevron]').setAttribute('d',collapsed?'m12 9 3 3-3 3':'m15 9-3 3 3 3');
+    nav.hidden=collapsed&&window.innerWidth<=620;
+  }
+  window.MMSidebar={refresh:refreshSidebar};
+  refreshSidebar();window.addEventListener('resize',refreshSidebar);
+  sidebarButton.addEventListener('click',()=>window.MMCatalogTools.setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed')));
 })();

@@ -22,6 +22,7 @@
       layout: ['auto', 'table', 'cards'].includes(value?.layout) ? value.layout : 'auto',
       columns: Array.isArray(value?.columns) ? [...new Set(value.columns.filter(key => allColumns.includes(key)))] : [...allColumns],
       compact: value?.compact === true,
+      sidebarCollapsed: value?.sidebarCollapsed === true,
       pageSize: [10, 15, 25, 50, 100].includes(value?.pageSize) ? value.pageSize : 50
     };
   }
@@ -183,6 +184,8 @@
     preferences = next; applyPreferences(); render(false); return true;
   }
   function applyPreferences() {
+    document.body.classList.toggle('sidebar-collapsed', preferences.sidebarCollapsed);
+    window.MMSidebar?.refresh();
     document.body.classList.toggle('compact', preferences.compact); state.compact = preferences.compact;
     $('#compactBtn').setAttribute('aria-pressed', String(preferences.compact));
     $('#compactBtn').textContent = preferences.compact ? '⊞ Expandir linhas' : '⊞ Compactar linhas';
@@ -315,7 +318,7 @@
     event.preventDefault();
     if (applyBulk({ category: $('#bulkCategory').value, profile: $('#bulkProfile').value, range: $('#bulkRange').value, curve: $('#bulkCurve').value })) $('#bulkEditBackdrop').classList.add('hidden');
   });
-  window.MMCatalogTools = { render: renderTools, syncSelection, snapshot, validateBackup, restoreBackup, stageRestore, saveFavorite, applyFavorite, applyBulk };
+  window.MMCatalogTools = { render: renderTools, syncSelection, snapshot, validateBackup, restoreBackup, stageRestore, saveFavorite, applyFavorite, applyBulk, setSidebarCollapsed(value) { return savePreferences({ ...preferences, sidebarCollapsed: value === true }); } };
   state.pageSize = preferences.pageSize; $('#pageSize').value = String(state.pageSize);
   renderFavorites(); applyPreferences(); updateRecovery(); render(false);
 })();
