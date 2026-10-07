@@ -7,8 +7,21 @@ window.MMPerfil = (function () {
   const pecaById = Object.fromEntries(CFG.pecas.map((p) => [p.id, p]));
   let over = {};
   try { const parsed = JSON.parse(localStorage.getItem(KEY) || '{}'); over = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}; } catch (e) { over = {}; }
-  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(over)); } catch (e) { toast('Não foi possível salvar no navegador.'); } };
+  const persist = (next = over) => { if (!MMStore.commit([[KEY, next]])) return false; over = next; return true; };
   const norm = (v) => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const curveForRating = n => n >= 4 ? 'A' : n === 3 ? 'B' : n >= 1 ? 'C' : '';
+  function rating(r) { const value = over[r.id]?.rating; return Number.isInteger(value) && value >= 1 && value <= 5 ? value : 0; }
+  function catalogCurve(r) { return curveForRating(rating(r)) || over[r.id]?.estrela || ''; }
+  function ratingMarkup(r) {
+    const value = rating(r);
+    return `<span class="moto-rating" role="group" aria-label="Avaliar ${esc(r.modelo)}">${[1,2,3,4,5].map(n => `<button type="button" class="rating-btn ${n <= value ? 'filled' : ''}" data-rating-moto="${r.id}" data-rating-value="${n}" aria-pressed="${n === value}" aria-label="${n} estrela${n > 1 ? 's' : ''} para ${esc(r.modelo)}" title="${n} estrela${n > 1 ? 's' : ''} · Curva ${curveForRating(n)}">${n <= value ? '★' : '☆'}</button>`).join('')}<button type="button" class="rating-clear" data-rating-moto="${r.id}" data-rating-value="0" aria-label="Limpar avaliação de ${esc(r.modelo)}" ${value ? '' : 'disabled'}>×</button></span>`;
+  }
+  function rate(id, value) {
+    if (!Number.isInteger(value) || value < 0 || value > 5) return false;
+    const next = JSON.parse(JSON.stringify(over)); next[id] = { ...(next[id] || {}) }; delete next[id].estrela;
+    if (value) next[id].rating = value; else delete next[id].rating;
+    if (!Object.keys(next[id]).length) delete next[id]; return persist(next);
+  }
 
   function derivePerfil(r) { return CFG.perfilPorCategoria[r.categoria] || 'Estrada / Clássica'; }
   function deriveFaixa(r) {
@@ -20,23 +33,30 @@ window.MMPerfil = (function () {
     if (CFG.marcasJaponesas.includes(r.marca)) return cc <= 160 ? 'economica' : cc <= 300 ? 'media' : 'alta';
     return 'media';
   }
+  function formData(id) {
+    const next = JSON.parse(JSON.stringify(over)), patch = { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value };
+    next[id] = { ...(next[id] || {}), ...patch }; Object.keys(next[id]).forEach(key => { if (!next[id][key]) delete next[id][key]; });
+    const stars = Number($('#fRating').value); if (stars) { next[id].rating = stars; delete next[id].estrela; } else delete next[id].rating;
+    if (!Object.keys(next[id]).length) delete next[id]; return next;
+  }
   function get(r) {
     const o = over[r.id] || {};
     const market = window.MMMarket?.get(r);
-    return { perfil: o.perfil || derivePerfil(r), faixa: faixaById[o.faixa] ? o.faixa : deriveFaixa(r), valor: o.valor || '', estrela: o.estrela || market?.curve || '', market, manual: Boolean(o.perfil || o.faixa) };
+    return { perfil: o.perfil || derivePerfil(r), faixa: faixaById[o.faixa] ? o.faixa : deriveFaixa(r), valor: o.valor || '', rating: rating(r), estrela: catalogCurve(r), curveManual: Boolean(o.estrela), market, manual: Boolean(o.perfil || o.faixa) };
   }
   function set(id, patch) {
     const next = { ...(over[id] || {}), ...patch };
+    if (Object.hasOwn(patch, 'estrela')) delete next.rating;
     Object.keys(next).forEach((k) => { if (!next[k]) delete next[k]; });
-    if (Object.keys(next).length) over[id] = next; else delete over[id];
-    persist();
+    const updated = { ...over }; if (Object.keys(next).length) updated[id] = next; else delete updated[id];
+    return persist(updated);
   }
   const nextStar = (s) => (s === '' ? 'A' : s === 'A' ? 'B' : s === 'B' ? 'C' : '');
 
   function cells(r) {
     const g = get(r); const f = faixaById[g.faixa];
-    const star = g.estrela ? `<button class="star-btn on" title="CURVA ${g.estrela} · ${over[r.id]?.estrela ? 'ajuste manual' : 'automática · Fenabrave'} — clique para trocar">CURVA <b>${g.estrela}</b>${over[r.id]?.estrela ? '' : ' <small>auto</small>'}</button>` : '<button class="star-btn" title="Marcar como CURVA A, B ou C">☆</button>';
-    return `<td class="perfil-cell">${esc(g.perfil)}</td><td><span class="faixa-badge" style="--c:${f.cor}" title="${esc(f.faixa)}${g.manual ? ' · ajustada manualmente' : ''}">${esc(f.label)}</span></td><td class="star-cell">${star}</td>`;
+    const star = g.estrela ? `<button class="star-btn on" title="CURVA ${g.estrela} · ${over[r.id]?.estrela ? 'ajuste manual' : 'automática pelas estrelas'} — clique para trocar">CURVA <b>${g.estrela}</b>${over[r.id]?.estrela ? '' : ' <small>auto</small>'}</button>` : '<button class="star-btn" title="Marcar como CURVA A, B ou C">☆</button>';
+    return `<td class="perfil-cell">${esc(g.perfil)}</td><td><span class="faixa-badge" style="--c:${f.cor}" title="${esc(f.faixa)}${g.manual ? ' · ajustada manualmente' : ''}">${esc(f.label)}</span></td><td class="star-cell">${ratingMarkup(r)}${star}${g.rating ? `<small>${g.rating}/5 estrelas</small>` : ''}</td>`;
   }
   function match(r, s) {
     if (!s.perfil && !s.faixa && !s.estrela) return true;
@@ -86,6 +106,7 @@ window.MMPerfil = (function () {
     const nivel = $('#tgNivel').value || nivelPorPreco(preco);
     const escopo = $('#tgEscopo').value; const so = $('#tgCompat').checked;
     let base = escopo === 'filtradas' ? filtered() : escopo === 'estrelas' ? records.filter((r) => get(r).estrela) : records.slice();
+    if (escopo === 'catalogoA') base = records.filter(r => catalogCurve(r) === 'A').sort((a,b) => rating(b) - rating(a) || a.modelo.localeCompare(b.modelo, 'pt-BR'));
     if (escopo === 'mercadoA' || escopo === 'mercado') base = base.filter(r => window.MMMarket?.get(r) && (escopo !== 'mercadoA' || window.MMMarket.get(r).curve === 'A')).sort((a, b) => window.MMMarket.get(b).units - window.MMMarket.get(a).units);
     if (nivel && so) base = base.filter((r) => pecaById[nivel].faixas.includes(get(r).faixa));
     return { peca, nivel, rows: base.map((r) => ({ r, t: peca ? titulo(r, peca, nivel) : '' })) };
@@ -117,6 +138,14 @@ window.MMPerfil = (function () {
   }
 
   function init() {
+    document.addEventListener('click', event => {
+      const button = event.target.closest('[data-rating-moto]'); if (!button) return;
+      const id = Number(button.dataset.ratingMoto), value = Number(button.dataset.ratingValue);
+      const host = button.closest('#catalogAbcRows, #catalogCards, #motoRows')?.id;
+      if (!rate(id, value)) return;
+      render(); if (!$('#titulosView')?.classList.contains('hidden')) renderTitulos();
+      document.querySelector(`${host ? '#' + host + ' ' : ''}[data-rating-moto="${id}"][data-rating-value="${value}"]`)?.focus();
+    });
     const opt = (list) => list.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
     /* filtros */
     $('#clearFilters').insertAdjacentHTML('beforebegin',
@@ -128,16 +157,17 @@ window.MMPerfil = (function () {
     /* estrela por linha */
     $('#motoRows').addEventListener('click', (e) => { const b = e.target.closest('.star-btn'); if (!b) return; const id = Number(b.closest('tr').dataset.id); const rec = records.find((r) => Number(r.id) === id); set(id, { estrela: nextStar(get(rec).estrela) }); render(); });
     /* estrela em lote */
-    $('.bulk-actions').insertAdjacentHTML('afterbegin', '<span class="bulk-stars">Marcar selecionados: <button type="button" class="bulk-star" data-star="A">CURVA A</button><button type="button" class="bulk-star" data-star="B">CURVA B</button><button type="button" class="bulk-star" data-star="C">CURVA C</button><button type="button" class="bulk-star" data-star="">Usar curva automática</button></span>');
-    $('#bulkBar').addEventListener('click', (e) => { const b = e.target.closest('.bulk-star'); if (!b) return; const ids = [...selectedMotoIds]; ids.forEach((id) => set(id, { estrela: b.dataset.star })); render(); toast(b.dataset.star ? `${ids.length} moto(s) marcada(s) ${estrelaLabel(b.dataset.star)}` : `${ids.length} moto(s) sem curva`); });
+    $('.bulk-actions').insertAdjacentHTML('afterbegin', '<span class="bulk-stars">Marcar selecionados: <button type="button" class="bulk-star" data-star="A">CURVA A</button><button type="button" class="bulk-star" data-star="B">CURVA B</button><button type="button" class="bulk-star" data-star="C">CURVA C</button><button type="button" class="bulk-star" data-star="">Limpar avaliação e curva</button></span>');
+    $('#bulkBar').addEventListener('click', (e) => { const b = e.target.closest('.bulk-star'); if (!b) return; const ids = [...selectedMotoIds], next = JSON.parse(JSON.stringify(over)); ids.forEach(id => { next[id] = { ...(next[id] || {}), estrela: b.dataset.star }; delete next[id].rating; if (!b.dataset.star) delete next[id].estrela; }); if (!persist(next)) return; render(); toast(b.dataset.star ? `${ids.length} moto(s) marcada(s) ${estrelaLabel(b.dataset.star)}` : 'Avaliação e curva removidas.'); });
     /* campos no cadastro */
     $('#nomeTitulo').closest('label').insertAdjacentHTML('afterend',
       `<label>Perfil<select id="fPerfil"><option value="">Automático (pela categoria)</option>${opt(CFG.perfis.map((p) => [p, p]))}</select></label>` +
       `<label>Faixa de valor<select id="fFaixa"><option value="">Automática (marca e cilindrada)</option>${opt(CFG.faixas.map((f) => [f.id, `${f.label} (${f.faixa})`]))}</select></label>` +
       `<label>Valor médio da moto (R$)<input id="fValor" type="number" min="0" step="100" placeholder="Opcional"></label>` +
-      `<label>Curva<select id="fEstrela"><option value="">Automática (mercado)</option><option value="A">CURVA A</option><option value="B">CURVA B</option><option value="C">CURVA C</option></select></label>`);
+      `<label>Avaliação em estrelas<select id="fRating"><option value="">Sem avaliação</option>${[1,2,3,4,5].map(n => `<option value="${n}">${"★".repeat(n)} · Curva ${curveForRating(n)}</option>`).join("")}</select><small>4–5: A · 3: B · 1–2: C</small></label><label>Curva manual (opcional)<select id="fEstrela"><option value="">Pela avaliação em estrelas</option><option value="A">CURVA A</option><option value="B">CURVA B</option><option value="C">CURVA C</option></select></label>`);
+    $('#fRating').addEventListener('change', () => { $('#fEstrela').disabled = Boolean($('#fRating').value); if ($('#fRating').value) $('#fEstrela').value = ''; });
     const origOpen = openMotoModal;
-    openMotoModal = function (id = null) { origOpen(id); const rec = id ? records.find((r) => r.id === id) : null; const o = rec ? (over[rec.id] || {}) : {}; $('#fPerfil').value = o.perfil || ''; $('#fFaixa').value = o.faixa || ''; $('#fValor').value = o.valor || ''; $('#fEstrela').value = o.estrela || ''; };
+    openMotoModal = function (id = null) { origOpen(id); const rec = id ? records.find((r) => r.id === id) : null; const o = rec ? (over[rec.id] || {}) : {}; $('#fPerfil').value = o.perfil || ''; $('#fFaixa').value = o.faixa || ''; $('#fValor').value = o.valor || ''; $('#fEstrela').value = o.estrela || ''; $('#fRating').value = o.rating || ''; $('#fEstrela').disabled = Boolean(o.rating); };
 
     /* painel */
     $('#dashboardView').insertAdjacentHTML('beforeend', '<article class="chart-card" id="perfilDash" style="margin-top:16px"></article>');
@@ -152,7 +182,7 @@ window.MMPerfil = (function () {
     ['#tgPeca', '#tgPreco', '#tgNivel', '#tgEscopo', '#tgCompat'].forEach((s) => $(s).addEventListener('input', renderTitulos));
     $('#tgBody').addEventListener('click', async (e) => { const b = e.target.closest('.tg-copy'); if (!b) return; const row = renderTitulos.last[Number(b.dataset.i)]; try { await navigator.clipboard.writeText(row.t); toast('Título copiado'); } catch (err) { toast('Não foi possível copiar'); } });
     $('#tgCopyAll').addEventListener('click', async () => { const t = (renderTitulos.last || []).map((x) => x.t).filter(t => t && t.length <= CFG.limiteTitulo).join('\n'); if (!t) return toast('Nada para copiar'); try { await navigator.clipboard.writeText(t); toast('Títulos copiados'); } catch (err) { toast('Não foi possível copiar'); } });
-    $('#tgCsv').addEventListener('click', () => { const rows = (renderTitulos.last || []).filter((x) => x.t && x.t.length <= CFG.limiteTitulo); if (!rows.length) return toast('Nada para exportar'); const csv = '\uFEFF' + [['Marca', 'Modelo', 'Faixa', 'Estrela', 'Título'], ...rows.map(({ r, t }) => [r.marca, r.modelo, faixaById[get(r).faixa].label, get(r).estrela, t])].map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'master-motos-titulos.csv'; a.click(); URL.revokeObjectURL(a.href); });
+    $('#tgCsv').addEventListener('click', () => { const rows = (renderTitulos.last || []).filter((x) => x.t && x.t.length <= CFG.limiteTitulo); if (!rows.length) return toast('Nada para exportar'); const csv = '\uFEFF' + [['Marca', 'Modelo', 'Faixa', 'Estrela', 'Título'], ...rows.map(({ r, t }) => [r.marca, r.modelo, faixaById[get(r).faixa].label, get(r).estrela, t])].map((l) => l.map(MMCsv.cell).join(';')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'master-motos-titulos.csv'; a.click(); URL.revokeObjectURL(a.href); });
     const paramsNav = $('[data-view="titulos"]');
     if (paramsNav) paramsNav.innerHTML = '<span class="nav-icon">✎</span> Gerador de títulos';
     const paramsView = $('#titulosView');
@@ -167,5 +197,5 @@ window.MMPerfil = (function () {
     $('.nav').addEventListener('click', event => { const b = event.target.closest('[data-view]'); if (b) showView(b.dataset.view); });
   }
 
-  return { refreshTitles: renderTitulos, exportData() { return JSON.parse(JSON.stringify(over)); }, replaceData(data) { over = JSON.parse(JSON.stringify(data)); }, saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { over = {}; persist(); }, remove(ids) { ids.forEach(id => delete over[id]); persist(); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
+  return { rating, catalogCurve, ratingMarkup, rate, formData, refreshTitles: renderTitulos, exportData() { return JSON.parse(JSON.stringify(over)); }, replaceData(data) { over = JSON.parse(JSON.stringify(data)); }, saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { return persist({}); }, remove(ids) { const next = { ...over }; ids.forEach(id => delete next[id]); return persist(next); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
 })();

@@ -17,42 +17,42 @@
   const shown = value => value == null ? '' : String(value).replace('.', ',');
   const input = (value, attrs, label, optional = false) => `<label class="pricing-field">${label}<input type="text" inputmode="decimal" autocomplete="off" value="${esc(shown(value))}" ${attrs} ${optional ? '' : 'required'}><small>${optional ? 'Vazio = taxa padrão' : ''}</small></label>`;
   const panelAttrs = key => `data-pricing-panel="${key}" ${data.ui[key] ? 'open' : ''}`;
-  function saveLayout() {
-    try {
-      qa('details[data-pricing-panel]').forEach(panel => data.ui[panel.dataset.pricingPanel] = panel.open);
-      let next, validDraft = true;
-      try { next = E.validate(data); } catch {
-        validDraft = false;
-        next = clone(lastValid); next.ui = clone(data.ui);
-        next.categories.forEach(category => { const draft = data.categories.find(item => item.id === category.id); if (draft) category.collapsed = draft.collapsed; });
-        next = E.validate(next);
+  function snapshotValid() {
+    const safe = clone(lastValid), problems = [];
+    safe.ui = clone(data.ui);
+    try { safe.settings = E.validate({ ...safe, settings: data.settings, categories: [], fees: [] }).settings; } catch { problems.push('preferências gerais'); }
+    try { const values = E.validate({ ...safe, knownPrice: data.knownPrice, fees: data.fees, categories: [] }); safe.knownPrice = values.knownPrice; safe.fees = values.fees; } catch { problems.push('conferência de taxas'); }
+    safe.categories = data.categories.flatMap(category => {
+      try { return E.validate({ ...safe, categories: [category], ui: {} }).categories; }
+      catch {
+        const field = q(`[data-pricing-category="${category.id}"] input[aria-invalid="true"]`);
+        problems.push((category.name || 'Produto sem nome') + (field ? ' · ' + (field.getAttribute('aria-label') || field.closest('label')?.firstChild?.textContent || 'campo inválido') : ' · revise os campos'));
+        const previous = lastValid.categories.find(item => item.id === category.id);
+        return previous ? [{ ...clone(previous), collapsed: category.collapsed }] : [];
       }
-      localStorage.setItem(KEY, JSON.stringify(next)); lastValid = clone(next);
-      if (!timer) setStatus(validDraft ? 'Preferências e organização salvas neste navegador.' : 'Organização salva. Corrija os campos inválidos para salvar os valores.', !validDraft);
-    } catch { setStatus('Não foi possível guardar a organização dos painéis neste navegador.', true); }
+    });
+    return { value: E.validate(safe), problems };
+  }
+  function saveLayout() {
+    qa('details[data-pricing-panel]').forEach(panel => data.ui[panel.dataset.pricingPanel] = panel.open);
+    persistValid(false, true);
+  }
+  function persistValid(manual = false, layout = false) {
+    try {
+      const { value, problems } = snapshotValid();
+      localStorage.setItem(KEY, JSON.stringify(value)); lastValid = clone(value);
+      savedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      if (!layout || !timer) setStatus(problems.length ? `Valores válidos salvos · campos inválidos em: ${problems.join('; ')}` : `Preferências salvas neste navegador · ${savedAt}`, problems.length > 0);
+      if (manual) toast(problems.length ? 'Produtos válidos salvos. Revise os campos indicados.' : 'Preferências de precificação salvas.');
+      return problems.length === 0;
+    } catch { setStatus('Não foi possível salvar. Exporte as preferências ou tente novamente.', true); if (manual) toast('Falha no armazenamento. As alterações estão apenas nesta sessão.'); return false; }
   }
   function setStatus(message, error = false) {
     q('#pricingSaveStatus').textContent = message;
     q('#pricingSaveStatus').classList.toggle('is-error', error);
+    q('#pricingReview')?.classList.toggle('hidden', !error || !q('input[aria-invalid="true"]'));
   }
-  function save(manual = false) {
-    clearTimeout(timer);
-    timer = null;
-    try {
-      const validated = E.validate(data);
-      localStorage.setItem(KEY, JSON.stringify(validated));
-      lastValid = clone(validated);
-      savedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      setStatus(`Preferências salvas neste navegador · ${savedAt}`);
-      if (manual) toast('Preferências de precificação salvas.');
-      return true;
-    } catch (error) {
-      const invalid = (() => { try { E.validate(data); return false; } catch { return true; } })();
-      setStatus(invalid ? 'Há campos inválidos. Corrija-os para salvar.' : 'Não foi possível salvar. Exporte as preferências ou tente novamente.', true);
-      if (manual) toast(invalid ? 'Revise os campos antes de salvar.' : 'Falha no armazenamento. As alterações estão apenas nesta sessão.');
-      return false;
-    }
-  }
+  function save(manual = false) { clearTimeout(timer); timer = null; return persistValid(manual); }
   function changed() { setStatus('Alterações não salvas · salvando automaticamente...'); clearTimeout(timer); timer = setTimeout(() => save(), 350); }
   function replaceData(next) {
     clearTimeout(timer); timer = null; data = E.validate(next); lastValid = clone(data); renderAll();
@@ -133,15 +133,16 @@
     qa('[data-pricing-setting]').forEach(field => { const value = data.settings[field.dataset.pricingSetting]; field.value = field.tagName === 'SELECT' ? value : shown(value); });
     q('#pricingKnownPrice').value = shown(data.knownPrice);
     renderCategories(); renderFeeRows();
-    qa('details[data-pricing-panel]').forEach(panel => panel.open = Boolean(data.ui[panel.dataset.pricingPanel]));
+    qa('details[data-pricing-panel]').forEach(panel => panel.open = panel.dataset.pricingPanel === 'fees' && data.ui.fees == null ? true : Boolean(data.ui[panel.dataset.pricingPanel]));
   }
   function download(content, type, filename) {
     const url = URL.createObjectURL(new Blob([content], { type }));
     const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function exportPreferences() {
-    try { const validated = E.validate(data); download(JSON.stringify({ format: 'master-motos-pricing', schemaVersion: 1, data: validated }, null, 2), 'application/json', 'master-motos-precificacao.json'); toast('Preferências exportadas.'); }
-    catch { toast('Corrija os campos inválidos antes de exportar.'); }
+    const { value, problems } = snapshotValid();
+    download(JSON.stringify({ format: 'master-motos-pricing', schemaVersion: 1, data: value }, null, 2), 'application/json', 'master-motos-precificacao.json');
+    toast(problems.length ? 'Preferências válidas exportadas. Produtos incompletos usam os últimos valores salvos.' : 'Preferências exportadas.');
   }
   function exportCsv() {
     const rows = [['Produto / categoria', 'Faixa', 'Imposto %', 'Lucro desejado %', 'Canal', 'Custo total', 'Preço sugerido', 'Lucro estimado', 'Margem efetiva %', 'Situação']];
@@ -149,7 +150,7 @@
       const result = E.calculate(category, scenario, data.settings, channel.id);
       rows.push([category.name, scenario.label, scenario.taxPct, scenario.marginPct, channel.label, result.valid ? result.base.toFixed(2) : '', result.valid ? result.price.toFixed(2) : '', result.valid ? result.profit.toFixed(2) : '', result.valid ? result.actualMargin.toFixed(2) : '', result.valid ? 'Calculado' : result.message]);
     })));
-    const cell = value => { const str = String(value ?? ''); return `"${(/^[\s]*[=+@-]/.test(str) ? "'" : '') + str.replace(/"/g, '""')}"`; };
+    const cell = MMCsv.cell;
     download('\uFEFF' + rows.map(row => row.map(cell).join(';')).join('\r\n'), 'text/csv;charset=utf-8', 'master-motos-precos.csv');
     toast('Comparação de preços exportada.');
   }
@@ -158,11 +159,19 @@
 
   // Keep optional tools away from the everyday cost → price flow.
   const toolsPanel = document.createElement('details');
+  q('#pricingSaveStatus').insertAdjacentHTML('afterend', '<button class="subtle-btn hidden" id="pricingReview">Revisar campo pendente</button>');
+  q('#pricingReview').addEventListener('click', () => {
+    const field = q('input[aria-invalid="true"]'); if (!field) return;
+    const product = field.closest('[data-pricing-category]');
+    if (product?.classList.contains('is-collapsed')) product.querySelector('[data-pricing-action="collapse"]').click();
+    for (let parent = field.parentElement; parent && parent.id !== 'pricingView'; parent = parent.parentElement) if (parent.tagName === 'DETAILS') parent.open = true;
+    field.scrollIntoView?.({ behavior: 'smooth', block: 'center' }); field.focus(); field.select();
+  });
   toolsPanel.className = 'pricing-tools'; toolsPanel.dataset.pricingPanel = 'tools';
   toolsPanel.innerHTML = '<summary>Backup e exportação</summary>';
   toolsPanel.append(q('.pricing-save-bar > div')); q('.pricing-save-bar').append(toolsPanel);
   const settingsPanel = q('.pricing-settings'), feesPanel = q('.pricing-fee-check');
-  q('.pricing-method').before(settingsPanel, feesPanel);
+  q('.pricing-example-note').before(feesPanel); q('.pricing-method').before(settingsPanel);
   q('.pricing-section-title').insertAdjacentHTML('beforeend', '<div class="pricing-organize"><button class="subtle-btn" data-pricing-action="expand-all">Expandir todos</button><button class="subtle-btn" data-pricing-action="collapse-all">Recolher todos</button><button class="subtle-btn" id="pricingSettingsShortcut">Taxas e preferências</button></div>');
   q('#pricingSettingsShortcut').addEventListener('click', () => { settingsPanel.open = true; settingsPanel.scrollIntoView?.({ behavior: 'smooth', block: 'center' }); settingsPanel.querySelector('summary').focus(); });
   $('#pricingView').addEventListener('toggle', event => {
@@ -281,7 +290,7 @@
   });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && timer) save(); });
   window.addEventListener('pagehide', () => { saveLayout(); if (timer) save(); });
-  window.MMPricing = { storageKey: KEY, exportData() { try { return E.validate(data); } catch { return clone(lastValid); } }, validateData: E.validate, replaceData, save };
+  window.MMPricing = { storageKey: KEY, exportData() { return snapshotValid().value; }, validateData: E.validate, replaceData, save };
   renderAll();
   setStatus(loadError ? 'Não foi possível ler as preferências. Os exemplos foram carregados; revise e salve novamente.' : savedAt ? 'Preferências recuperadas deste navegador.' : 'Exemplos carregados · personalize e salve suas preferências.', loadError);
 })();

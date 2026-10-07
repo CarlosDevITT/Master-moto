@@ -24,7 +24,7 @@ async function app(seed = {}, storageFailure = false, marketFailure = false) {
   };
   for (const [key, value] of Object.entries(seed)) w.localStorage.setItem(key, value);
   if (storageFailure) w.Storage.prototype.setItem = () => { throw new Error('quota'); };
-  for (const file of ['data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'pricing-engine.js', 'pricing.js', 'market-engine.js', 'market.js', 'catalog-tools.js', 'accessibility.js']) {
+  for (const file of ['shared.js', 'data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'pricing-engine.js', 'pricing.js', 'market-engine.js', 'market.js', 'catalog-tools.js', 'catalog-abc.js', 'accessibility.js']) {
     const script = w.document.createElement('script');
     script.textContent = fs.readFileSync(path.join(root, 'js', file), 'utf8');
     w.document.body.append(script);
@@ -38,6 +38,183 @@ const NOTES = 'master-motos-notes-v1';
 const input = (w, id, value) => { const el = w.document.getElementById(id); el.value = value; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
 const submit = (w, id) => w.document.getElementById(id).dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
 const pricingInput = (a, selector, value) => { const el = a.doc.querySelector(selector); el.value = value; el.dispatchEvent(new a.w.Event('input', { bubbles: true })); return el; };
+
+test('Conferir taxas vem antes dos produtos, abre por padrão e respeita painel salvo fechado', async () => {
+  const a = await app(); let seed;
+  try {
+    const panel = a.doc.querySelector('.pricing-fee-check'), products = a.doc.querySelector('.pricing-section-title');
+    assert.ok(panel.compareDocumentPosition(products) & a.w.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.equal(panel.open, true);
+    panel.open = false; panel.dispatchEvent(new a.w.Event('toggle'));
+    seed = {[a.w.MMPricing.storageKey]:a.w.localStorage.getItem(a.w.MMPricing.storageKey)};
+  } finally { a.close(); }
+  const b = await app(seed); try { assert.equal(b.doc.querySelector('.pricing-fee-check').open, false); } finally { b.close(); }
+});
+
+test('Estrelas classificam o catálogo, persistem e acompanham backup e gerador', async () => {
+  const a = await app(); let seed;
+  try {
+    const record = a.w.MOTO_DATA[0], id = record.id;
+    input(a.w, 'searchLarge', 'Honda CRF50F');
+    a.doc.querySelector(`[data-rating-moto="${id}"][data-rating-value="5"]`).click();
+    assert.equal(a.w.MMPerfil.get(record).estrela, 'A');
+    assert.equal(a.w.MMPerfil.rating(record), 5);
+    assert.equal(a.w.MMCatalogTools.validateBackup(a.w.MMCatalogTools.snapshot()).profiles[id].rating, 5);
+    a.doc.querySelector('[data-view="mercado"]').click();
+    assert.equal(a.doc.querySelector('#abcSource').value, 'catalog');
+    assert.equal(a.doc.querySelector('#nationalReference').classList.contains('hidden'), true);
+    assert.equal(a.doc.querySelectorAll('#catalogAbcRows tr[data-abc-id]').length, 50);
+    assert.match(a.doc.querySelector('#catalogAbcCount').textContent, /464/);
+    a.doc.querySelector('#catalogAbcTitles').click(); input(a.w, 'tgPeca', 'Filtro');
+    assert.equal(a.doc.querySelector('#tgEscopo').value, 'catalogoA');
+    assert.equal(a.doc.querySelectorAll('#tgBody .tg-title').length, 1);
+    assert.match(a.doc.querySelector('#tgBody .tg-title').textContent, /CRF50F/);
+    a.doc.querySelector('[data-view="catalogo"]').click();
+    for (const [stars, curve] of [[4,'A'],[3,'B'],[2,'C'],[1,'C']]) {
+      a.doc.querySelector(`#motoRows [data-rating-moto="${id}"][data-rating-value="${stars}"]`).click();
+      assert.equal(a.w.MMPerfil.catalogCurve(record), curve);
+    }
+    seed = storageSeed(a.w);
+  } finally { a.close(); }
+  const b = await app(seed); try {
+    const record = b.w.MOTO_DATA[0]; assert.equal(b.w.MMPerfil.rating(record), 1); assert.equal(b.w.MMPerfil.catalogCurve(record), 'C');
+    b.doc.querySelector(`[data-rating-moto="${record.id}"][data-rating-value="0"]`).click();
+    assert.equal(b.w.MMPerfil.catalogCurve(record), '');
+  } finally { b.close(); }
+});
+
+test('Avaliação recusada pelo armazenamento mantém estrelas anteriores', async () => {
+  const a = await app();
+  try {
+    const record = a.w.MOTO_DATA[0]; assert.equal(a.w.MMPerfil.rate(record.id, 4), true);
+    a.w.Storage.prototype.setItem = () => { throw Error('quota'); };
+    assert.equal(a.w.MMPerfil.rate(record.id, 2), false);
+    assert.equal(a.w.MMPerfil.rating(record), 4); assert.equal(a.w.MMPerfil.catalogCurve(record), 'A');
+    const bad = a.w.MMCatalogTools.snapshot(); bad.profiles[record.id].rating = 6;
+    assert.throws(() => a.w.MMCatalogTools.validateBackup(bad), /estrelas/);
+  } finally { a.close(); }
+});
+
+test('Um produto incompleto não impede salvar os valores válidos dos outros', async () => {
+  const a = await app();
+  try {
+    a.w.MMPricing.save();
+    const products = [...a.doc.querySelectorAll('[data-pricing-category]')];
+    pricingInput(a, `[data-pricing-category="${products[0].dataset.pricingCategory}"] [data-category-field="cost"]`, '');
+    pricingInput(a, `[data-pricing-category="${products[1].dataset.pricingCategory}"] [data-category-field="cost"]`, '999');
+    assert.equal(a.w.MMPricing.save(), false);
+    const saved = JSON.parse(a.w.localStorage.getItem(a.w.MMPricing.storageKey));
+    assert.equal(saved.categories[0].cost, 541.32);
+    assert.equal(saved.categories[1].cost, 999);
+    assert.equal(a.w.MMPricing.exportData().categories[1].cost, 999);
+  } finally { a.close(); }
+});
+
+test('Falha ao gravar curva individual ou em lote preserva os perfis', async () => {
+  const a = await app();
+  try {
+    const before = JSON.stringify(a.w.MMPerfil.exportData());
+    a.w.Storage.prototype.setItem = () => { throw Error('quota'); };
+    a.doc.querySelector('#motoRows .star-btn').click();
+    assert.equal(JSON.stringify(a.w.MMPerfil.exportData()), before);
+    selectRow(a, a.doc.querySelector('#motoRows tr[data-id]'));
+    a.doc.querySelector('.bulk-star[data-star="B"]').click();
+    assert.equal(JSON.stringify(a.w.MMPerfil.exportData()), before);
+    assert.equal(a.w.localStorage.getItem('master-motos-perfil-v1'), null);
+  } finally { a.close(); }
+});
+
+test('Família de mercado mostra todas as aplicações e mantém o filtro no favorito', async () => {
+  const base = {marca:'Yamaha', cilindrada:250, categoria:'Adventure / Trail', anoInicial:2020, anoFinal:2026, quatroTempos:'4T', doisTempos:''};
+  const a = await app({[RECORDS]:JSON.stringify([{...base,id:1,modelo:'Lander 250',nomeTitulo:'LANDER250'}, {...base,id:2,modelo:'XTZ 250',nomeTitulo:'XTZ250'}, {...base,id:3,modelo:'Outra',nomeTitulo:'OUTRA'}])});
+  try {
+    a.doc.querySelector('[data-market-model="YAMAHA/XTZ250"]').click();
+    assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 2);
+    assert.match(a.doc.querySelector('#filterSummary').textContent, /Família de mercado/);
+    a.w.MMCatalogTools.saveFavorite('Lander');
+    const favorite = a.w.MMCatalogTools.snapshot().favorites[0];
+    a.doc.querySelector('#catalogReset').click();
+    assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 3);
+    a.w.MMCatalogTools.applyFavorite(favorite.id);
+    assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 2);
+  } finally { a.close(); }
+});
+
+test('Exportações neutralizam fórmulas em textos e preservam números e aspas', async () => {
+  const a = await app();
+  try {
+    for (const value of ['=1+1', '+CMD', '@SUM(1)', '-CMD', '  =1+1', '\t=1', '＝1']) assert.equal(a.w.MMCsv.cell(value), '"\t' + value + '"');
+    assert.equal(a.w.MMCsv.cell(-25), '"-25"');
+    assert.equal(a.w.MMCsv.cell('Peça "A"; Honda'), '"Peça ""A""; Honda"');
+  } finally { a.close(); }
+});
+
+test('Falha ao salvar nota de componente mantém o conteúdo salvo e o formulário', async () => {
+  const a = await app();
+  try {
+    const record = a.w.MOTO_DATA[0];
+    input(a.w, 'guideNoteMotoId', String(record.id)); input(a.w, 'guideNoteComponentId', 'engine'); input(a.w, 'guideNoteText', 'Primeira');
+    submit(a.w, 'guideNoteForm');
+    const before = JSON.stringify(a.w.MMCatalogTools.snapshot().guide);
+    a.w.Storage.prototype.setItem = () => { throw Error('quota'); };
+    input(a.w, 'guideNoteText', 'Segunda'); submit(a.w, 'guideNoteForm');
+    assert.equal(JSON.stringify(a.w.MMCatalogTools.snapshot().guide), before);
+    assert.equal(a.doc.querySelector('#guideNoteText').value, 'Segunda');
+  } finally { a.close(); }
+});
+
+test('Ranking permite cadastrar modelo com ano revisado e mantém referência nacional separada', async () => {
+  const a = await app();
+  try {
+    const before = a.w.MMCatalogTools.snapshot().records.length;
+    a.doc.querySelector('[data-market-add="HONDA/CG160"]').click();
+    assert.equal(a.doc.querySelector('#modelo').value, 'CG 160 Fan');
+    assert.equal(a.doc.querySelector('#anoInicial').value, '2025');
+    assert.equal(a.doc.querySelector('#anoFinal').value, '2025');
+    assert.equal(a.doc.querySelector('#cilindrada').checkValidity(), true);
+    assert.match(a.doc.querySelector('#marketRegistrationSource a').href, /saladeimprensa.honda.com.br/);
+    submit(a.w, 'motoForm');
+    const snapshot = a.w.MMCatalogTools.snapshot();
+    assert.equal(snapshot.records.length, before + 1);
+    const added = snapshot.records.find(record => record.modelo === 'CG 160 Fan');
+    assert.equal(a.w.MMMarket.get(added).id, 'HONDA/CG160');
+    assert.equal(a.w.MMPerfil.get(added).estrela, '');
+    a.doc.querySelector('#newMoto').click();
+    assert.equal(a.doc.querySelector('#marketRegistrationSource'), null);
+  } finally { a.close(); }
+});
+
+test('Falha de perfil durante cadastro desfaz os registros e mantém o formulário editável', async () => {
+  const a = await app();
+  try {
+    const stableSnapshot = () => { const snapshot = a.w.MMCatalogTools.snapshot(); delete snapshot.exportedAt; return JSON.stringify(snapshot); };
+    const before = stableSnapshot();
+    const original = a.w.Storage.prototype.setItem;
+    let calls = 0;
+    a.w.Storage.prototype.setItem = function(key, value) { if (++calls === 3) throw Error('quota'); return original.call(this, key, value); };
+    a.doc.querySelector('#newMoto').click();
+    for (const [id, value] of Object.entries({marca:'Teste',modelo:'Nova',cilindrada:'250',categoria:'Enduro',anoInicial:'2020',anoFinal:'2026',nomeTitulo:'NOVA',fEstrela:'B'})) input(a.w,id,value);
+    submit(a.w, 'motoForm');
+    assert.equal(stableSnapshot(), before);
+    assert.equal(a.w.localStorage.getItem(RECORDS), null);
+    assert.equal(a.doc.querySelector('#modalBackdrop').classList.contains('hidden'), false);
+  } finally { a.close(); }
+});
+
+test('Importação de notas do guia com falha de armazenamento preserva a base anterior', async () => {
+  const a = await app();
+  try {
+    a.doc.querySelector('[data-view="guia"]').click();
+    const before = JSON.stringify(a.w.MMCatalogTools.snapshot().guide);
+    a.w.FileReader = class { readAsText(file) { this.result = file.content; this.onload(); } };
+    const upload = a.doc.querySelector('#guideImportFile');
+    Object.defineProperty(upload, 'files', { value:[{content:JSON.stringify({schemaVersion:1,notes:{'1:engine':[{id:'n1',text:'Nova nota',createdAt:'hoje',updatedAt:'hoje'}]}})}] });
+    a.w.Storage.prototype.setItem = () => { throw Error('quota'); };
+    upload.dispatchEvent(new a.w.Event('change'));
+    assert.equal(JSON.stringify(a.w.MMCatalogTools.snapshot().guide), before);
+    assert.match(a.doc.querySelector('#toast').textContent, /Não foi possível salvar/);
+  } finally { a.close(); }
+});
 test('Precificação mostra entrada rápida, sincroniza cenário e recalcula os preços imediatamente', async () => {
   const a = await app();
   try {
@@ -329,11 +506,11 @@ test('Painel ABC carrega fonte, mantém curva ao filtrar e abre aplicações cad
     assert.ok([...a.doc.querySelectorAll('#motoRows .model-cell')].every(el => el.textContent.includes('XRE 190')));
   } finally { a.close(); }
 });
-test('Curva automática respeita ajuste manual e gerador prioriza mercado sem retirar anos', async () => {
+test('Curva do catálogo é independente do mercado e gerador de referência preserva anos', async () => {
   const a = await app();
   try {
     const rec = a.w.MOTO_DATA.find(r => r.modelo === 'XRE 190');
-    assert.equal(a.w.MMPerfil.get(rec).estrela, 'A');
+    assert.equal(a.w.MMPerfil.get(rec).estrela, '');
     a.w.MMPerfil.replaceData({ [rec.id]: { estrela: 'C' } });
     assert.equal(a.w.MMPerfil.get(rec).estrela, 'C'); assert.equal(a.w.MMMarket.get(rec).curve, 'A');
     a.doc.querySelector('#marketTitles').click(); assert.equal(a.doc.querySelector('#tgEscopo').value, 'mercadoA');

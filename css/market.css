@@ -55,3 +55,17 @@ body.dark-mode .curve-B { background: #263a58; color: #adcaf5; }
   .market-ad { display: block; }
   .market-ad .primary-btn { width: 100%; }
 }
+.market-registration-source { padding: 12px 14px; color: var(--muted); background: var(--yellow-soft); border-radius: 8px; line-height: 1.6; font-size: 12px; }
+.market-registration-source a { color: var(--ink); text-underline-offset: 3px; }
+.moto-rating { display: inline-flex; gap: 2px; align-items: center; white-space: nowrap; }
+.rating-btn, .rating-clear { background: transparent; border: 0; padding: 3px; min-width: 28px; min-height: 32px; cursor: pointer; font-size: 23px; color: var(--muted); }
+.rating-btn.filled { color: #bc8500; }
+body.dark-mode .rating-btn.filled { color: var(--yellow); }
+.rating-btn:hover { color: #bc8500; background: var(--yellow-soft); border-radius: 5px; }
+.rating-clear { font-size: 17px; }
+.rating-clear:disabled { opacity: .3; cursor: default; }
+.star-cell > small, #catalogAbcRows small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+.catalog-abc-source { padding: 18px; margin-bottom: 18px; }
+.catalog-abc-source label { display: grid; gap: 8px; max-width: 330px; font-size: 12px; }
+.catalog-abc-source p { color: var(--muted); font-size: 12px; line-height: 1.7; margin-bottom: 0; }
+.catalog-abc-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 16px; font-size: 12px; }

@@ -1,6 +1,6 @@
 #pricingView { --pricing-good: #17804e; }
 #pricingView h2 { font: 600 20px 'Space Grotesk', sans-serif; margin: 0; }
-.pricing-save-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.pricing-save-bar { display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .pricing-save-bar > div { display: flex; gap: 7px; flex-wrap: wrap; }
 #pricingSaveStatus { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
 #pricingSaveStatus::before { content: ''; width: 7px; height: 7px; flex-shrink: 0; background: var(--green); border-radius: 50%; }
@@ -48,7 +48,7 @@
 .pricing-result { border: 1px solid var(--line); border-radius: 12px; padding: 15px 13px; background: var(--surface); min-width: 0; display: grid; gap: 12px; }
 .pricing-result-featured { border-color: #dba619; background: var(--yellow-soft); }
 .pricing-channel-label { color: var(--muted); font-size: 11px; font-weight: 700; }
-.pricing-result > strong { font: 700 clamp(17px, 1.5vw, 23px) 'Space Grotesk', sans-serif; letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pricing-result > strong { font: 700 clamp(21px, 1.7vw, 29px) 'Space Grotesk', sans-serif; letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .pricing-result > small { color: var(--pricing-good); font-size: 11px; min-height: 32px; line-height: 1.5; }
 #pricingView .pricing-result summary { padding: 0; font-size: 11px; color: var(--muted); }
 .pricing-result dl { font-size: 10px; margin: 10px 0 0; }
@@ -109,9 +109,7 @@ body.dark-mode #pricingView { --pricing-good: #7bd4a1; }
 .pricing-tools { position: relative; font-size: 12px; }
 #pricingView .pricing-tools summary { padding: 7px 10px; font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; }
 .pricing-tools > div { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
-.pricing-save-bar { align-items: start; }
 .pricing-example-note { font-size: 11px; padding-block: 4px; margin-bottom: 12px; }
-.pricing-result > strong { font-size: clamp(21px, 1.7vw, 29px); }
 @media (max-width: 850px) { .pricing-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) {
   .pricing-organize { margin-left: 0; width: 100%; }

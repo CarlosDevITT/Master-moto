@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  pages: write
 concurrency:
   group: market-data
   cancel-in-progress: false
@@ -18,11 +19,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pypdf==6.10.0
+      - run: python tests/update_market_test.py
       - run: python tools/update-market.py
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Validar dados e publicar atualização no repositório
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           node -e "require('./js/market-engine.js').validate(require('./Data/market-sales.json'))"
           if ! git diff --quiet -- Data/market-sales.json; then
@@ -31,4 +35,9 @@ jobs:
             git add Data/market-sales.json
             git commit -m 'Atualiza emplacamentos oficiais de motos'
             git push
+          fi
+          # Bot pushes do not trigger Pages; also retry a previously failed publication.
+          published=$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq 'select(.status == "built") | .commit')
+          if [ "$published" != "$(git rev-parse HEAD)" ]; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
           fi

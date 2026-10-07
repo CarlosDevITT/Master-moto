@@ -29,7 +29,7 @@
   function cleanFilter(value) {
     if (!isObject(value)) throw new Error('Filtro favorito inválido.');
     const result = {};
-    for (const key of ['query', 'brand', 'category', 'yearMin', 'yearMax']) {
+    for (const key of ['query', 'brand', 'category', 'yearMin', 'yearMax', 'marketFamily']) {
       if (value[key] != null && !text(value[key])) throw new Error('Filtro favorito inválido.');
       result[key] = value[key] || '';
     }
@@ -103,7 +103,8 @@
     const profiles = {};
     for (const [key, item] of Object.entries(value.profiles)) {
       if (!/^[1-9]\d*$/.test(key) || !isObject(item) || (item.perfil && !CFG.perfis.includes(item.perfil)) || (item.faixa && !CFG.faixas.some(f => f.id === item.faixa)) || (item.estrela && !['A', 'B', 'C'].includes(item.estrela)) || (item.valor && (!Number.isFinite(Number(item.valor)) || Number(item.valor) < 0))) throw new Error('Classificação inválida no backup.');
-      profiles[key] = Object.fromEntries(['perfil', 'faixa', 'estrela', 'valor'].filter(field => item[field] != null).map(field => [field, String(item[field])]));
+      if (item.rating != null && (!Number.isInteger(item.rating) || item.rating < 1 || item.rating > 5)) throw new Error('Avaliação em estrelas inválida.');
+      profiles[key] = Object.fromEntries(['perfil', 'faixa', 'estrela', 'valor'].filter(field => item[field] != null).map(field => [field, String(item[field])])); if (item.rating != null) profiles[key].rating = item.rating;
     }
     if (!isObject(value.guide) || value.guide.schemaVersion !== 1 || !isObject(value.guide.notes)) throw new Error('Notas de componentes inválidas no backup.');
     const guide = { schemaVersion: 1, notes: {} };
@@ -217,7 +218,7 @@
     if (cardMode) {
       $('#catalogCards').innerHTML = visible.map(record => {
         const profile = MMPerfil.get(record);
-        return `<article class="moto-card" data-card-id="${record.id}"><div class="moto-card-top"><label><input class="card-check" type="checkbox" aria-label="Selecionar ${esc(record.marca)} ${esc(record.modelo)}"> <span>${esc(record.marca)}</span></label><span class="engine ${record.doisTempos ? 'two' : ''}">${record.doisTempos ? '2T' : '4T'}</span></div><h3>${esc(record.modelo)}</h3><p class="moto-card-specs">${fmt(record.cilindrada)} cc <span>·</span> ${esc(record.anoInicial)}–${esc(record.anoFinal)}</p>${categoryBadge(record.categoria)}<dl><div><dt>Perfil</dt><dd>${esc(profile.perfil)}</dd></div><div><dt>Faixa</dt><dd>${esc(MMPerfil.faixaLabel(record))}</dd></div><div><dt>Notas</dt><dd>${notesFor(record.id).length}</dd></div></dl><div class="moto-card-foot"><button class="subtle-btn" data-card-action="edit">Editar</button><button class="subtle-btn" data-card-action="add-note">+ Nota</button><button class="star-btn ${profile.estrela ? 'on' : ''}" data-card-action="star-btn" aria-label="Alterar curva de ${esc(record.modelo)}">${profile.estrela ? 'Curva ' + esc(profile.estrela) : '☆ Curva'}</button><button class="subtle-btn card-delete" data-card-action="delete" aria-label="Excluir ${esc(record.modelo)}">Excluir</button></div></article>`;
+        return `<article class="moto-card" data-card-id="${record.id}"><div class="moto-card-top"><label><input class="card-check" type="checkbox" aria-label="Selecionar ${esc(record.marca)} ${esc(record.modelo)}"> <span>${esc(record.marca)}</span></label><span class="engine ${record.doisTempos ? 'two' : ''}">${record.doisTempos ? '2T' : '4T'}</span></div><h3>${esc(record.modelo)}</h3><p class="moto-card-specs">${fmt(record.cilindrada)} cc <span>·</span> ${esc(record.anoInicial)}–${esc(record.anoFinal)}</p>${categoryBadge(record.categoria)}<dl><div><dt>Perfil</dt><dd>${esc(profile.perfil)}</dd></div><div><dt>Faixa</dt><dd>${esc(MMPerfil.faixaLabel(record))}</dd></div><div><dt>Notas</dt><dd>${notesFor(record.id).length}</dd></div></dl>${MMPerfil.ratingMarkup(record)}<div class="moto-card-foot"><button class="subtle-btn" data-card-action="edit">Editar</button><button class="subtle-btn" data-card-action="add-note">+ Nota</button><button class="star-btn ${profile.estrela ? 'on' : ''}" data-card-action="star-btn" aria-label="Alterar curva de ${esc(record.modelo)}">${profile.estrela ? 'Curva ' + esc(profile.estrela) + (profile.rating ? ' · estrelas' : profile.curveManual ? ' · manual' : ' · auto') : '☆ Curva'}</button><button class="subtle-btn card-delete" data-card-action="delete" aria-label="Excluir ${esc(record.modelo)}">Excluir</button></div></article>`;
       }).join('') || '<div class="catalog-empty card-empty"><strong>Nenhuma moto encontrada</strong><p>Experimente outra busca ou cadastre uma moto.</p><div><button class="subtle-btn" data-card-empty="clear">Limpar filtros</button><button class="primary-btn" data-card-empty="new">+ Nova moto</button></div></div>';
     }
     syncSelection();
@@ -233,7 +234,7 @@
     for (const selected of ids) {
       const item = { ...(profiles[selected] || {}) };
       for (const [field, key] of [['profile', 'perfil'], ['range', 'faixa'], ['curve', 'estrela']]) {
-        if (!changedFields.includes(field)) continue;
+        if (!changedFields.includes(field)) continue; if (field === 'curve') delete item.rating;
         if (patch[field] === '') delete item[key]; else item[key] = patch[field];
       }
       if (Object.keys(item).length) profiles[selected] = item; else delete profiles[selected];

@@ -13,6 +13,33 @@ import unicodedata
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX = 'https://www.fenabrave.org.br/portalv2/Conteudo/Emplacamentos'
+SEGMENTS = ('City', 'Custom', 'Trail/Fun', 'Maxtrail', 'Naked/Roadster', 'Scooter/Cub', 'Sport', 'Touring')
+
+def extract_rankings(text):
+    headers = [line.strip() for line in text.splitlines() if line.strip() in SEGMENTS]
+    pattern = r'(\d+)[º°]\s+([^/\n]+)/([^\n]+?)\s+([\d.,]+)\s+([\d.,]+)\s*[^\d]*?([\d.]+)\s+([\d,]+)%'
+    rows = list(re.finditer(pattern, text))
+    if len(rows) != len(re.findall(r'\d+[º°]', text)):
+        raise ValueError('Linha do ranking não reconhecida. A base anterior foi preservada.')
+    groups = []
+    for row in rows:
+        if int(row[1]) == 1:
+            groups.append([])
+        if not groups:
+            raise ValueError('Ranking sem primeira posição.')
+        groups[-1].append(row)
+    if len(headers) != len(groups) or not headers:
+        raise ValueError('Segmento ausente ou não reconhecido.')
+    models = []
+    for segment, group in zip(headers, groups):
+        positions = [int(row[1]) for row in group]
+        share = sum(float(row[7].replace(',', '.')) for row in group)
+        if positions != list(range(1, len(group) + 1)) or len(group) > 10 or (len(group) < 10 and (segment != 'Touring' or share < 100 - len(group) * 0.005 - 0.000001)):
+            raise ValueError('Ranking incompleto no segmento ' + segment)
+        count = lambda value: int(value.replace('.', '').replace(',00', ''))
+        for row in group:
+            models.append({'brand': row[2].strip(), 'model': row[3].strip(), 'monthly': count(row[5]), 'previous': count(row[4]), 'yearToDate': count(row[6])})
+    return headers, models
 
 def download(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'MasterMotos/1.0'}), timeout=45) as response:
@@ -22,6 +49,7 @@ def extract(pdf, source, period):
     reader = PdfReader(io.BytesIO(pdf))
     models, total_month, total_year = [], None, None
     motorcycles = False
+    segments = []
     for page in reader.pages:
         text = page.extract_text() or ''
         if 'Emplacamento Motocicletas' in text:
@@ -36,13 +64,10 @@ def extract(pdf, source, period):
                 total_month, total_year = [int(x.replace('.', '')) for x in totals.groups()]
         if not motorcycles or 'Modelos mais emplacados acumulado' not in text:
             continue
-        # Match only ranked model rows, including zero monthly sales and movement arrows.
-        pattern = r'\d+[º°]\s+([^/\n]+)/([^\n]+?)\s+([\d.,]+)\s+([\d.,]+)\s*[^\d]*?([\d.]+)\s+[\d,]+%'
-        for match in re.finditer(pattern, text):
-            brand, model, previous, current, year = match.groups()
-            count = lambda value: int(value.replace('.', '').replace(',00', ''))
-            models.append({'brand': brand.strip(), 'model': model.strip(), 'monthly': count(current), 'previous': count(previous), 'yearToDate': count(year)})
-    if not total_month or not total_year or not 60 <= len(models) <= 120:
+        headers, rows = extract_rankings(text)
+        segments.extend(headers)
+        models.extend(rows)
+    if not total_month or not total_year or sorted(segments) != sorted(SEGMENTS):
         raise ValueError('Relatório sem tabela completa reconhecível. A base anterior foi preservada.')
     keys = [(row['brand'], row['model']) for row in models]
     if len(set(keys)) != len(keys) or sum(row['yearToDate'] for row in models) > total_year or sum(row['monthly'] for row in models) > total_month:
