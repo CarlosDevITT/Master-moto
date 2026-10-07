@@ -2,11 +2,15 @@
 (() => {
   let previousFocus = null;
   let activeDialog = null;
+  let lastExternalFocus = document.activeElement;
+  document.addEventListener('focusin', event => {
+    if (!event.target.closest('.modal-backdrop')) lastExternalFocus = event.target;
+  });
   const sync = () => {
     const next = [...document.querySelectorAll('.modal-backdrop')].find(element => !element.classList.contains('hidden'));
     document.body.classList.toggle('modal-open', Boolean(next));
     document.querySelector('.app-shell').inert = Boolean(next);
-    if (next && !activeDialog) previousFocus = document.activeElement;
+    if (next && !activeDialog) previousFocus = lastExternalFocus;
     if (!next && activeDialog && previousFocus?.isConnected) previousFocus.focus();
     activeDialog = next;
   };

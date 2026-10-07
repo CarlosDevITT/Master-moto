@@ -177,6 +177,7 @@ function render(full = true) {
   const activeFilters = [state.brand, state.category, state.engine, state.year, state.notesOnly, state.perfil, state.faixa, state.estrela].filter(Boolean).length;
   $('#filterCount').textContent = activeFilters; $('#filterCount').classList.toggle('visible', Boolean(activeFilters));
   ensureGuideButtons(); renderSelectionState(); renderFilterSummary();
+  window.MMCatalogTools?.render(visible);
   if (full) { renderDashboard(); renderNotes(); MMPerfil.render(); }
 }
 
@@ -207,6 +208,7 @@ function renderSelectionState() {
   const selectAll = $('#selectAll'); const allSelected = rows.length > 0 && rows.every((row) => selectedMotoIds.has(Number(row.dataset.id))); const someSelected = rows.some((row) => selectedMotoIds.has(Number(row.dataset.id)));
   if (selectAll) { selectAll.checked = allSelected; selectAll.indeterminate = !allSelected && someSelected; }
   $('#selectedCount').textContent = selectedMotoIds.size; $('#bulkBar').classList.toggle('hidden', selectedMotoIds.size === 0);
+  window.MMCatalogTools?.syncSelection();
 }
 
 function guideComponentsFor(record) {

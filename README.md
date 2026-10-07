@@ -17,9 +17,20 @@ Com Node.js instalado, execute `npm run dev` e abra <http://localhost:4173>. O a
 
 Para atualizar a base de motos a partir da planilha, execute `./tools/extract-data.ps1` no PowerShell. Para conferir uma extração sem sobrescrever a base, use `./tools/extract-data.ps1 -ExportPath ./arquivo-temporario.js`.
 
+## Ferramentas do Catálogo
+
+- **Backup completo** baixa um JSON com motos, notas, classificações comerciais, notas de componentes, filtros favoritos, colunas, visualização e tema. Ele inclui toda a base, mesmo quando a busca mostra apenas algumas motos.
+- **Restaurar backup** permite escolher esse JSON e conferir as quantidades antes de confirmar. Dados inválidos e IDs duplicados são recusados. A base atual é substituída; a versão anterior fica disponível em **Recuperar base anterior**, inclusive após recarregar. Você também pode baixar um backup atual antes da confirmação. Essa recuperação permanece no navegador e não substitui a cópia exportada.
+- **Colunas** permite ocultar informações da tabela. Modelo, seleção e ações permanecem disponíveis. Use **Mostrar todas** para retornar à tabela completa.
+- **Salvar filtro** guarda busca, filtros, ordenação e quantidade por página. Escolha um nome de até 60 caracteres. Salvar novamente com o mesmo nome atualiza o favorito. Escolha um favorito na lista para reaplicá-lo ou use **Remover favorito**.
+- **Tabela / Cartões** muda a visualização mantendo busca, paginação e seleção. Sem preferência manual, o celular usa cartões automaticamente. Cada cartão oferece seleção, edição, notas e classificação de curva.
+- **Editar selecionados** aparece na barra de seleção. Selecione motos na tabela ou nos cartões, inclusive em páginas diferentes, e altere categoria, perfil, faixa ou curva. **Manter atual** preserva o campo; as opções automáticas removem apenas os ajustes manuais de perfil/faixa. Fechar ou cancelar não modifica os registros.
+
+Preferências e filtros favoritos permanecem no navegador após recarregar. As gravações de restauração e edição em lote verificam todas as partes antes de atualizar a tela e tentam reverter os dados se uma gravação falhar. Exporte um backup para manter uma cópia fora do navegador.
+
 ## Verificação
 
-`npm test` valida inicialização, navegação, busca, paginação, cadastro, classificação, notas, exclusão simples e em lote, persistência após recarga, busca combinada, limpeza de filtros e falhas de armazenamento. `npm run check` verifica a sintaxe dos arquivos JavaScript e os recursos locais do HTML.
+`npm test` valida inicialização, navegação, busca, paginação, cadastro, classificação, notas, exclusão simples e em lote, persistência após recarga, filtros favoritos, colunas, cartões, backups, recuperação, edição em lote, cancelamento e falhas de armazenamento. `npm run check` verifica a sintaxe dos arquivos JavaScript e os recursos locais do HTML.
 
 Os testes usam um DOM simulado; não substituem a inspeção visual em um navegador real. A tentativa de abrir a prévia no navegador conectado nesta revisão não conseguiu acessar o servidor local.
 

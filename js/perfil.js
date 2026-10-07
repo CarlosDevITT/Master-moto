@@ -163,5 +163,5 @@ window.MMPerfil = (function () {
     $('.nav').addEventListener('click', event => { const b = event.target.closest('[data-view]'); if (b) showView(b.dataset.view); });
   }
 
-  return { saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { over = {}; persist(); }, remove(ids) { ids.forEach(id => delete over[id]); persist(); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
+  return { exportData() { return JSON.parse(JSON.stringify(over)); }, replaceData(data) { over = JSON.parse(JSON.stringify(data)); }, saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { over = {}; persist(); }, remove(ids) { ids.forEach(id => delete over[id]); persist(); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
 })();
