@@ -29,7 +29,7 @@ async function fixture(client=mock(),actualApp=false,url='https://site.example/M
  w.localStorage.setItem('master-motos-records-v1','[{"id":"guest-secret"}]');
  w.eval(fs.readFileSync(path.join(root,'js/cloud-engine.js'),'utf8'));
  w.eval(fs.readFileSync(path.join(root,'js/account.js'),'utf8').replace('window.MMAccountReady=window.MMAccount.init(window.MM_SUPABASE_CONFIG);',''));
- let loads=0;const loadApp=async()=>{loads++;if(actualApp){for(const file of w.MMAccount.scripts){const s=w.document.createElement('script');s.textContent=fs.readFileSync(path.join(root,'js',file),'utf8');w.document.body.append(s);}}else{w.MMCatalogTools={snapshot:()=>({records:[],notes:{},profiles:{},guide:{},pricing:{},preferences:{},favorites:[],theme:'light'})};}};
+ let loads=0;const loadApp=async()=>{loads++;if(actualApp){for(const file of w.MMAccount.scripts){const s=w.document.createElement('script');s.textContent=fs.readFileSync(path.join(root,'js',file),'utf8');w.document.body.append(s);}}else{w.MMCatalogTools={snapshot:()=>({records:[],notes:{},profiles:{},guide:{},pricing:{},brands:{schemaVersion:1,items:[]},preferences:{},favorites:[],theme:'light'})};}};
  const state=await w.MMAccount.init(config,{loadApp,createClient:()=>client});
  const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
  return {w,doc:w.document,client,state,loads:()=>loads,errors,settle,close(){state.sync?.stop();dom.window.close();}};

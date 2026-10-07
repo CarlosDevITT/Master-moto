@@ -90,3 +90,10 @@ Consulte [o guia de ativação](docs/SUPABASE.md) para conferir os endereços do
 - Execute `python -B tests/update_market_test.py` para testar extrações incompletas, linhas ilegíveis e valores mensais zero. Os testes exigem `pypdf==6.10.0`; o workflow instala essa versão antes de executá-los.
 
 Referências dos modelos: [CG 160 2025](https://saladeimprensa.honda.com.br/releases/honda-cg-160-2025-nova-geracao-da-motocicleta-preferida-dos-brasileiros-traz-importantes), [Biz 125](https://saladeimprensa.honda.com.br/motocicletas/street/biz-125), [Pop 110i](https://saladeimprensa.honda.com.br/motocicletas/street/pop-110i) e [Bros 2026](https://prodsalaimp.honda.com.br/releases/honda-nxr-160-bros-2026-nova-cor-para-versao-cbs). A solicitação automática da publicação segue a [API oficial do GitHub Pages](https://docs.github.com/en/rest/pages/pages#request-a-github-pages-build).
+
+
+## Marcas
+
+A aba Marcas reúne os 13 links solicitados, com busca, cadastro, edição e remoção. Cartões e links abrem em nova guia. O ícone do site usa o favicon; quando indisponível, aparecem as iniciais. O cadastro aceita um link de logo opcional (HTTP/HTTPS). Os links de Vedamotors, Kawaparts e Partzilla foram mantidos sem parâmetros de rastreamento; os filtros de Twin Air foram preservados.
+
+A lista usa `master-motos-brands-v1`, isolada por conta e integrada ao mecanismo existente de sincronização. O backup completo inclui marcas; backups antigos preservam a lista atual. Não há alteração de banco necessária para esse campo do documento da conta. Links executáveis e links com credenciais são recusados. Uma falha ao salvar mantém a lista anterior e o formulário aberto.

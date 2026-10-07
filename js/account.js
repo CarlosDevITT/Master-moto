@@ -1,6 +1,6 @@
 /* Login and account lifecycle. Application scripts load only after account hydration. */
 window.MMAccount = (() => {
-  const scripts=['shared.js','data.js','guide-data.js','perfil-data.js','perfil.js','app.js','pricing-engine.js','pricing.js','market-engine.js','market.js','catalog-tools.js','catalog-abc.js','accessibility.js'];
+  const scripts=['shared.js','data.js','guide-data.js','perfil-data.js','perfil.js','app.js','pricing-engine.js','pricing.js','market-engine.js','market.js','brands.js','catalog-tools.js','catalog-abc.js','accessibility.js'];
   const loadScript = file => new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='js/'+file;script.onload=resolve;script.onerror=()=>reject(Error('Não foi possível carregar o aplicativo.'));document.body.append(script);});
   async function loadApp(){ for(const file of scripts) await loadScript(file); }
   async function init(config, dependencies={}) {
@@ -62,7 +62,7 @@ window.MMAccount = (() => {
         if(changedAccount)throw Error('A conta mudou durante o carregamento.');
         window.MMStorage=store; appStarted=true; await appLoader(); if(changedAccount)throw Error('A conta mudou durante o carregamento.'); loaded=true;
         const data=window.MMCatalogTools.snapshot();
-        const defaults={'master-motos-records-v1':data.records,'master-motos-notes-v1':data.notes,'master-motos-perfil-v1':data.profiles,'mm_guia_notes_v1':data.guide,'master-motos-pricing-v1':data.pricing,'mm-catalog-preferences-v1':data.preferences,'mm-catalog-favorites-v1':data.favorites,'mm_theme_v1':data.theme};
+        const defaults={'master-motos-records-v1':data.records,'master-motos-notes-v1':data.notes,'master-motos-perfil-v1':data.profiles,'mm_guia_notes_v1':data.guide,'master-motos-pricing-v1':data.pricing,'master-motos-brands-v1':data.brands,'mm-catalog-preferences-v1':data.preferences,'mm-catalog-favorites-v1':data.favorites,'mm_theme_v1':data.theme};
         for(const [key,value] of Object.entries(defaults))if(store.getItem(key)===null)store.setItem(key,key==='mm_theme_v1'?value:JSON.stringify(value));
         document.querySelector('.topbar').insertAdjacentHTML('afterend', `<section class="account-session"><div class="account-session-meta"><strong id="accountIdentity"></strong><p id="accountSyncStatus" role="status" aria-live="polite">Dados carregados da sua conta.</p></div><div class="account-session-actions"><button class="subtle-btn" id="accountSync">Sincronizar</button><button class="subtle-btn" id="accountLogout">Sair</button><button class="subtle-btn" id="accountImportLocal" hidden>Importar dados anteriores deste navegador</button></div><div id="accountConflict" hidden><p>Há versões diferentes. Baixe uma cópia antes de escolher.</p><button class="subtle-btn" id="accountBackup">Baixar cópia local</button><button class="subtle-btn" id="accountUseCloud">Usar versão da nuvem</button><button class="subtle-btn" id="accountUseLocal">Enviar versão deste dispositivo</button></div></section>`);
         if(lastStatus)cloudStatus(lastStatus);

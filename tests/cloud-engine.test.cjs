@@ -38,3 +38,15 @@ test('Conteúdo inválido não é enviado e uma conta nova não cai nos dados le
  const raw=memory();raw.setItem(KEY,'["legado"]');const s=E.createStore(raw,A);const bad=E.createSync({store:s,remote:{read:async()=>{throw Error('offline');}}});await assert.rejects(bad.initialize());assert.equal(s.getItem(KEY),null);
  const r=remote(),sync=E.createSync({store:s,remote:r});await sync.initialize();s.setItem(KEY,'JSON invalido');assert.equal(await sync.flush(),false);assert.equal(r.row,null);assert.equal(s.meta().dirty,true);sync.stop();
 });
+
+
+test('Marcas são isoladas por conta e restauradas pela sincronização em outro dispositivo',async()=>{
+ const key='master-motos-brands-v1',raw=memory(),r=remote();
+ const a=E.createStore(raw,A),b=E.createStore(raw,B),sync=E.createSync({store:a,remote:r});
+ await sync.initialize();b.hydrate(payload(),0);
+ const brands=JSON.stringify({schemaVersion:1,items:[{id:'marca',name:'Minha marca',url:'https://example.com/',logo:''}]});
+ a.setItem(key,brands);assert.equal(b.getItem(key),null);assert.equal(raw.getItem(key),null);
+ assert.equal(await sync.flush(),true);assert.equal(r.row.payload.values[key],brands);
+ const other=E.createStore(memory(),A),reload=E.createSync({store:other,remote:r});await reload.initialize();
+ assert.equal(other.getItem(key),brands);sync.stop();reload.stop();
+});

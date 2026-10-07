@@ -1,5 +1,5 @@
 (function(root) {
-  const keys = ['master-motos-records-v1','master-motos-notes-v1','master-motos-notes-v1-backup','master-motos-perfil-v1','mm_guia_notes_v1','master-motos-pricing-v1','mm-catalog-preferences-v1','mm-catalog-favorites-v1','mm-catalog-before-restore-v1','mm_theme_v1'];
+  const keys = ['master-motos-records-v1','master-motos-notes-v1','master-motos-notes-v1-backup','master-motos-perfil-v1','mm_guia_notes_v1','master-motos-pricing-v1','master-motos-brands-v1','mm-catalog-preferences-v1','mm-catalog-favorites-v1','mm-catalog-before-restore-v1','mm_theme_v1'];
   function validate(payload) {
     if (!payload || payload.schemaVersion !== 1 || !payload.values || typeof payload.values !== 'object' || Array.isArray(payload.values) || JSON.stringify(payload).length > 10485760) throw Error('Dados da conta inválidos.');
     for (const [key,value] of Object.entries(payload.values)) {

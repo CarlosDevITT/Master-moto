@@ -24,7 +24,7 @@ async function app(seed = {}, storageFailure = false, marketFailure = false) {
   };
   for (const [key, value] of Object.entries(seed)) w.localStorage.setItem(key, value);
   if (storageFailure) w.Storage.prototype.setItem = () => { throw new Error('quota'); };
-  for (const file of ['shared.js', 'data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'pricing-engine.js', 'pricing.js', 'market-engine.js', 'market.js', 'catalog-tools.js', 'catalog-abc.js', 'accessibility.js']) {
+  for (const file of ['shared.js', 'data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'pricing-engine.js', 'pricing.js', 'market-engine.js', 'market.js', 'brands.js', 'catalog-tools.js', 'catalog-abc.js', 'accessibility.js']) {
     const script = w.document.createElement('script');
     script.textContent = fs.readFileSync(path.join(root, 'js', file), 'utf8');
     w.document.body.append(script);
@@ -368,7 +368,7 @@ test('Exclusão permanece após recarregar e limpa notas e perfil associados', a
 test('Navegação sempre exibe uma única seção entre as abas disponíveis sem o gerador de títulos', async () => {
   const a = await app();
   try {
-    for (const name of ['dashboard', 'notas', 'catalogo', 'guia', 'precificacao', 'mercado']) {
+    for (const name of ['dashboard', 'notas', 'catalogo', 'guia', 'precificacao', 'mercado', 'marcas']) {
       a.doc.querySelector(`[data-view="${name}"]`).click();
       const visible = [...a.doc.querySelectorAll('.main > .content')].filter(el => !el.classList.contains('hidden'));
       assert.equal(visible.length, 1, name);
@@ -758,4 +758,46 @@ test('Importação do arquivo de backup exige prévia e confirmação; cancelar 
     assert.equal(a.doc.querySelector('#sideCount').textContent,'2');
     assert.equal(a.w.MMCatalogTools.snapshot().records.length,2);
   } finally { a.close(); }
+});
+
+
+test('Marcas têm 13 links em nova guia, cadastro persistente, busca, edição, remoção e backup', async () => {
+  const a = await app(); let seed;
+  try {
+    a.doc.querySelector('[data-view="marcas"]').click();
+    assert.equal(a.doc.querySelector('#brandsView').classList.contains('hidden'), false);
+    assert.equal(a.doc.querySelectorAll('.brand-card').length, 13);
+    const prox = a.doc.querySelector('[data-brand-id="brand-0"] a');
+    assert.equal(prox.href, 'https://www.pro-x.com/'); assert.equal(prox.target, '_blank'); assert.match(prox.rel, /noopener/);
+    a.doc.querySelector('#brandAdd').click();
+    input(a.w,'brandName','Marca teste');input(a.w,'brandUrl','https://example.com/catalogo?modelo=1&ano=2026');
+    submit(a.w,'brandForm');assert.equal(a.w.MMBrands.exportData().items.length,14);
+    input(a.w,'brandSearch','Marca teste');assert.equal(a.doc.querySelectorAll('.brand-card').length,1);
+    a.doc.querySelector('[data-brand-action="edit"]').click();input(a.w,'brandName','Marca revisada');submit(a.w,'brandForm');
+    assert.equal(a.w.MMBrands.exportData().items.at(-1).name,'Marca revisada');
+    const backup=a.w.MMCatalogTools.snapshot();assert.equal(backup.brands.items.length,14);
+    assert.equal(a.w.MMCatalogTools.restoreBackup(backup),true);
+    seed={[a.w.MMBrands.storageKey]:a.w.localStorage.getItem(a.w.MMBrands.storageKey)};
+  } finally {a.close();}
+  const b=await app(seed);
+  try {
+    input(b.w,'brandSearch','Marca revisada');assert.equal(b.doc.querySelectorAll('.brand-card').length,1);
+    b.doc.querySelector('[data-brand-action="remove"]').click();assert.equal(b.w.MMBrands.exportData().items.length,13);
+    const backup=b.w.MMCatalogTools.snapshot();delete backup.brands;
+    assert.equal(b.w.MMCatalogTools.restoreBackup(backup),true);assert.equal(b.w.MMBrands.exportData().items.length,13);
+  } finally {b.close();}
+});
+
+test('Marcas recusam links executáveis e falhas de gravação preservam lista e formulário', async () => {
+  const a=await app();
+  try {
+    const before=JSON.stringify(a.w.MMBrands.exportData());
+    const invalid=a.w.MMBrands.exportData();invalid.items[0].url='javascript:alert(1)';
+    assert.throws(()=>a.w.MMBrands.validateData(invalid));
+    invalid.items[0].url='https://user:password@example.com/';assert.throws(()=>a.w.MMBrands.validateData(invalid));
+    a.doc.querySelector('#brandAdd').click();input(a.w,'brandName','<img src=x onerror=alert(1)>');input(a.w,'brandUrl','https://example.com/');
+    a.w.Storage.prototype.setItem=()=>{throw Error('quota');};submit(a.w,'brandForm');
+    assert.equal(JSON.stringify(a.w.MMBrands.exportData()),before);assert.equal(a.doc.querySelector('#brandEditor').classList.contains('hidden'),false);
+    assert.match(a.doc.querySelector('#brandStatus').textContent,/preservados/);
+  } finally {a.close();}
 });
