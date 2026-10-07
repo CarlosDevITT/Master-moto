@@ -51,15 +51,14 @@ A aba **Precificação** segue o tema claro/escuro do site e compara ML Premium,
 
 **Conferir taxas de um preço conhecido** é o primeiro painel, antes dos produtos, e abre por padrão. Fechar ou abrir o painel mantém a preferência salva.
 
-1. Preencha **custo, frete, imposto e lucro desejado** no produto. Os cinco preços e lucros aparecem enquanto você digita, sem botão para calcular. Frete, embalagem e outros custos vazios contam como zero.
-2. Use os atalhos de lucro (0%, 10%, 15%, 20%, 25%) ou informe outro percentual. Enter avança para o próximo campo. **Novo produto** já posiciona o cursor no custo.
-3. Embalagem, taxas por canal e cenários extras ficam recolhidos; abra somente quando precisar. O cenário escolhido sincroniza imposto e lucro entre os campos rápidos e a comparação. A margem é percentual do preço de venda, não acréscimo sobre o custo.
-4. As alterações válidas são salvas automaticamente neste navegador; **Salvar preferências** grava imediatamente. Um produto incompleto preserva seus últimos valores válidos sem impedir a gravação dos outros produtos. O aviso identifica o produto e o campo pendente; **Revisar campo pendente** abre o painel e posiciona o cursor para corrigir. Recarregar recupera as simulações, faixas e taxas.
-5. **Exportar/Importar preferências** permite guardar ou transferir um JSON. **Exportar preços CSV** leva todas as comparações para uma planilha. O backup completo do catálogo também inclui a precificação.
+1. Preencha apenas **custo, frete e taxa (%)** por produto. Os cinco preços aparecem automaticamente. Frete vazio conta como zero. Não há campo ou acréscimo de lucro desejado.
+2. Enter avança para o próximo campo. **Novo produto** posiciona o cursor no custo. As taxas dos canais usam as preferências já salvas.
+3. Alterações válidas são salvas automaticamente por conta; um produto incompleto preserva seus últimos valores válidos. **Revisar campo pendente** posiciona o cursor para corrigir.
+4. **Backup e exportação** permite salvar, importar preferências e exportar os preços atuais em CSV. O backup completo inclui a precificação.
 
-A organização também é salva: produtos expandidos/recolhidos, preferências gerais, custos extras, comissões, cenários e detalhes de cada preço. **Expandir todos/Recolher todos** organiza os produtos em um clique. Mesmo com um campo de custo inválido, recolher um painel guarda sua posição e preserva os últimos valores válidos. Backups antigos permanecem compatíveis. Backup, exportações e salvamento manual ficam agrupados em **Backup e exportação**.
+Produtos expandidos/recolhidos e detalhes dos resultados preservam a organização após recarregar. Backups antigos são convertidos automaticamente: imposto passa a taxa, margens são removidas e embalagem/outros custos já registrados são incorporados ao custo uma única vez.
 
-O preço é `(custos + tarifa fixa do canal) / (1 - (comissão + taxa operacional + imposto + margem) / 100)`, arredondado para cima ao próximo centavo, real inteiro ou final ,99. Uma soma igual ou superior a 100% não gera preço. O ajuste negativo da loja representa um crédito percentual, conforme o arquivo de origem; configure zero quando esse crédito não existir na sua operação. A conferência de um preço conhecido calcula cada taxa isoladamente, sem somá-la às simulações.
+O preço é `(custo + frete + tarifa fixa do canal) / (1 - (comissão + taxa operacional + taxa informada) / 100)`, arredondado para cima. Uma soma igual ou superior a 100% não gera preço. A conferência de um preço conhecido calcula cada taxa isoladamente, sem somá-la às simulações.
 
 Os dados e a organização da precificação são guardados por conta e sincronizados automaticamente no Supabase. O indicador da conta informa quando há alterações apenas neste dispositivo. Exporte um backup antes de limpar o navegador se houver envios pendentes. O arquivo HTML original não foi alterado.
 

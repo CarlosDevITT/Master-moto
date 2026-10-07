@@ -211,28 +211,27 @@ test('Importação de notas do guia com falha de armazenamento preserva a base a
     assert.match(a.doc.querySelector('#toast').textContent, /Não foi possível salvar/);
   } finally { a.close(); }
 });
-test('Precificação mostra entrada rápida, sincroniza cenário e recalcula os preços imediatamente', async () => {
+test('Precificação tem somente custo, frete e taxa, recalcula e salva sem lucro desejado', async () => {
   const a = await app();
   try {
     const host = a.doc.querySelector('[data-pricing-category="example17"]');
-    assert.equal(host.querySelectorAll('.pricing-quick-grid input').length, 4);
-    assert.equal(host.querySelector('.pricing-scenarios').open, false);
+    assert.equal(host.querySelectorAll('.pricing-quick-grid input').length, 3);
+    assert.equal(host.querySelector('[data-quick-scenario="marginPct"]'), null);
+    assert.equal(host.querySelector('.pricing-scenarios'), null);
     const before = host.querySelector('[data-result-price]').textContent;
-    pricingInput(a, '[data-pricing-category="example17"] [data-quick-scenario="marginPct"]', '20');
+    pricingInput(a, '[data-pricing-category="example17"] [data-quick-scenario="feePct"]', '20');
     assert.notEqual(host.querySelector('[data-result-price]').textContent, before);
-    assert.equal(host.querySelector('[data-scenario-id="tax23"] [data-scenario-field="marginPct"]').value, '20');
-    const selected = host.querySelector('[data-scenario-select]'); selected.value = 'tax18'; selected.dispatchEvent(new a.w.Event('change', { bubbles: true }));
-    assert.equal(host.querySelector('[data-quick-scenario="taxPct"]').value, '18');
-    host.querySelector('[data-margin="15"]').click(); assert.equal(host.querySelector('[data-quick-scenario="marginPct"]').value, '15');
+    assert.equal(a.w.MMPricing.exportData().categories[0].scenarios[0].feePct, 20);
     pricingInput(a, '[data-pricing-category="example17"] [data-category-field="shipping"]', '');
     assert.equal(a.w.MMPricing.exportData().categories[0].shipping, 0);
     assert.notEqual(host.querySelector('[data-result-price]').textContent, '—');
   } finally { a.close(); }
 });
+
 test('Precificação guarda painéis abertos e produtos recolhidos após recarga e backup', async () => {
   const a = await app(); let seed;
   try {
-    for (const key of ['settings', 'example17:channels', 'example17:breakdown-premium']) {
+    for (const key of ['settings', 'example17:breakdown-premium']) {
       const panel = a.doc.querySelector(`[data-pricing-panel="${key}"]`); panel.open = true; panel.dispatchEvent(new a.w.Event('toggle'));
     }
     a.doc.querySelector('[data-pricing-category="example17"] [data-pricing-action="collapse"]').click();
@@ -245,7 +244,6 @@ test('Precificação guarda painéis abertos e produtos recolhidos após recarga
   const b = await app(seed);
   try {
     assert.equal(b.doc.querySelector('[data-pricing-panel="settings"]').open, true);
-    assert.equal(b.doc.querySelector('[data-pricing-panel="example17:channels"]').open, true);
     assert.equal(b.doc.querySelector('[data-pricing-panel="example17:breakdown-premium"]').open, true);
     assert.ok(b.doc.querySelector('[data-pricing-category="example17"] .pricing-category-body').classList.contains('hidden'));
     const panel = b.doc.querySelector('[data-pricing-panel="settings"]'); panel.open = false; panel.dispatchEvent(new b.w.Event('toggle'));
@@ -293,7 +291,7 @@ test('Precificação rejeita campo inválido e mostra taxas impossíveis sem sub
     assert.equal(a.w.localStorage.getItem(a.w.MMPricing.storageKey), previous);
     assert.equal(a.doc.querySelector('[data-result-price]').textContent, '—');
     pricingInput(a, '[data-category-field="cost"]', '100');
-    pricingInput(a, '[data-scenario-id="tax23"] [data-scenario-field="taxPct"]', '71');
+    pricingInput(a, '[data-pricing-category="example17"] [data-quick-scenario="feePct"]', '71');
     assert.equal(a.doc.querySelector('[data-result-price]').textContent, '—');
     assert.match(a.doc.querySelector('[data-result-profit]').textContent, /100%/);
   } finally { a.close(); }
@@ -316,7 +314,7 @@ test('Simulações podem ser duplicadas, removidas e importadas com validação'
   try {
     a.doc.querySelector('[data-pricing-action="duplicate"]').click(); assert.equal(a.w.MMPricing.exportData().categories.length, 3);
     a.doc.querySelector('[data-pricing-action="remove-category"]').click(); assert.equal(a.w.MMPricing.exportData().categories.length, 2);
-    a.doc.querySelector('[data-pricing-action="add-scenario"]').click(); assert.equal(a.w.MMPricing.exportData().categories[0].scenarios.length, 4);
+    assert.equal(a.doc.querySelectorAll('[data-pricing-category] .pricing-quick-grid input').length, 6);
     const file = a.doc.querySelector('#pricingFile');
     const imported = a.w.MMPricing.exportData(); imported.categories[0].cost = 99;
     Object.defineProperty(file, 'files', { configurable: true, value: [{ size: 100, text: async () => JSON.stringify({ format: 'master-motos-pricing', schemaVersion: 1, data: imported }) }] });
