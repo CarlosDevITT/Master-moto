@@ -6,7 +6,7 @@ window.MMPerfil = (function () {
   const faixaById = Object.fromEntries(CFG.faixas.map((f) => [f.id, f]));
   const pecaById = Object.fromEntries(CFG.pecas.map((p) => [p.id, p]));
   let over = {};
-  try { over = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { over = {}; }
+  try { const parsed = JSON.parse(localStorage.getItem(KEY) || '{}'); over = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}; } catch (e) { over = {}; }
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(over)); } catch (e) { toast('Não foi possível salvar no navegador.'); } };
   const norm = (v) => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
@@ -22,7 +22,7 @@ window.MMPerfil = (function () {
   }
   function get(r) {
     const o = over[r.id] || {};
-    return { perfil: o.perfil || derivePerfil(r), faixa: o.faixa || deriveFaixa(r), valor: o.valor || '', estrela: o.estrela || '', manual: Boolean(o.perfil || o.faixa) };
+    return { perfil: o.perfil || derivePerfil(r), faixa: faixaById[o.faixa] ? o.faixa : deriveFaixa(r), valor: o.valor || '', estrela: o.estrela || '', manual: Boolean(o.perfil || o.faixa) };
   }
   function set(id, patch) {
     const next = { ...(over[id] || {}), ...patch };
@@ -110,7 +110,7 @@ window.MMPerfil = (function () {
     const t = $('#titulosView'); if (!t) return;
     t.classList.toggle('hidden', view !== 'titulos');
     if (view !== 'guia') $('#guideView')?.classList.add('hidden');
-    if (view === 'titulos') { ['#catalogView', '#dashboardView', '#notesView'].forEach((s) => $(s)?.classList.add('hidden')); $('#pageTitle').textContent = 'Parâmetros para títulos'; renderTitulos(); }
+    if (view === 'titulos') { ['#catalogView', '#dashboardView', '#notesView', '#dataImportView'].forEach((s) => $(s)?.classList.add('hidden')); $('#pageTitle').textContent = 'Parâmetros para títulos'; renderTitulos(); }
   }
 
   function init() {
@@ -135,12 +135,12 @@ window.MMPerfil = (function () {
       `<label>Curva<select id="fEstrela"><option value="">Sem curva</option><option value="A">CURVA A</option><option value="B">CURVA B</option><option value="C">CURVA C</option></select></label>`);
     const origOpen = openMotoModal;
     openMotoModal = function (id = null) { origOpen(id); const rec = id ? records.find((r) => r.id === id) : null; const o = rec ? (over[rec.id] || {}) : {}; $('#fPerfil').value = o.perfil || ''; $('#fFaixa').value = o.faixa || ''; $('#fValor').value = o.valor || ''; $('#fEstrela').value = o.estrela || ''; };
-    $('#motoForm').addEventListener('submit', () => { const id = Number($('#motoId').value) || records[0]?.id; if (id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); render(); } });
+
     /* painel */
     $('#dashboardView').insertAdjacentHTML('beforeend', '<article class="chart-card" id="perfilDash" style="margin-top:16px"></article>');
     /* gerador de títulos */
     $('.nav').insertAdjacentHTML('beforeend', '<button class="nav-item" data-view="titulos"><span class="nav-icon">✎</span> Gerador de títulos</button>');
-    $('.nav').insertAdjacentHTML('beforeend', '<button class="nav-item" data-view="data-import"><span class="nav-icon">▣</span> Produtos importados</button>');
+
     $('#notesView').insertAdjacentHTML('afterend', `<section class="content hidden" id="titulosView"><div class="hero-row"><div><p class="eyebrow">MÓDULO 03 · ANÚNCIOS</p><h1>Gerador de títulos</h1><p class="lede">Combine a peça com o perfil da moto: peça simples para moto simples, peça premium para moto de valor alto.</p></div></div>
 <div class="workspace-card tg-card"><div class="tg-form"><label>Nome da peça<input id="tgPeca" placeholder="Ex.: Pastilha de Freio Dianteira"></label><label>Preço da peça (R$)<input id="tgPreco" type="number" min="0" placeholder="Opcional"></label><label>Nível da peça<select id="tgNivel"><option value="">Automático (preço ou moto)</option>${opt(CFG.pecas.map((p) => [p.id, p.label]))}</select></label><label>Motos<select id="tgEscopo"><option value="filtradas">Filtradas no catálogo</option><option value="estrelas">Só com ★ (A, B, C)</option><option value="todas">Todas</option></select></label><label class="check-filter"><input id="tgCompat" type="checkbox" checked> Só motos compatíveis com o nível</label></div>
 <div class="table-meta"><span id="tgInfo"></span><div class="table-meta-actions"><button class="subtle-btn" id="tgCopyAll">Copiar todos</button><button class="subtle-btn" id="tgCsv">↧ Baixar CSV</button></div></div>
@@ -160,8 +160,8 @@ window.MMPerfil = (function () {
       if (lede) lede.textContent = 'Consulte os parâmetros da moto e da peça para montar seus títulos manualmente.';
       paramsView.insertAdjacentHTML('afterbegin', '<div class="workspace-card curve-card" style="margin-bottom:16px"><div class="module-heading"><div><span class="eyebrow">CLASSIFICAÇÃO DE CURVA</span><h2>Parâmetros de curva</h2><p>Use a curva da moto como referência na montagem do título.</p></div></div><div class="rank-list"><div class="rank-row"><span class="rank-no">A</span><span class="rank-name"><strong>CURVA A</strong><small style="color:var(--muted)">Maior prioridade comercial</small></span></div><div class="rank-row"><span class="rank-no">B</span><span class="rank-name"><strong>CURVA B</strong><small style="color:var(--muted)">Prioridade comercial intermediária</small></span></div><div class="rank-row"><span class="rank-no">C</span><span class="rank-name"><strong>CURVA C</strong><small style="color:var(--muted)">Prioridade comercial básica</small></span></div></div></div>');
     }
-    $$('.nav-item').forEach((b) => b.addEventListener('click', () => { showView(b.dataset.view); if (b.dataset.view === 'titulos') $('#pageTitle').textContent = 'Parâmetros para títulos'; }));
+    $('.nav').addEventListener('click', event => { const b = event.target.closest('[data-view]'); if (b) showView(b.dataset.view); });
   }
 
-  return { init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
+  return { saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { over = {}; persist(); }, remove(ids) { ids.forEach(id => delete over[id]); persist(); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
 })();

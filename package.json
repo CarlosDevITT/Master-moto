@@ -1,0 +1,13 @@
+{
+  "name": "master-motos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node tools/serve.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "check": "node tools/check.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}

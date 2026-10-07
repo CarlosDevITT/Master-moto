@@ -1,11 +1,14 @@
+param([string]$ExportPath = '')
+$ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$inputPath = Join-Path (Split-Path -Parent $projectRoot) 'MASTER_MOTOS_v6.xlsx'
-$outputPath = Join-Path $projectRoot 'js\data.js'
-$publishPath = Join-Path $projectRoot 'dist\js\data.js'
+$inputPath = Join-Path $projectRoot 'Data\MASTER_MOTOS_v6.xlsx'
+$outputPath = if ($ExportPath) { $ExportPath } else { Join-Path $projectRoot 'js\data.js' }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::OpenRead($inputPath)
+try {
 function Read-XmlEntry($name) {
   $entry = $zip.GetEntry($name)
+  if (!$entry) { throw "Entrada ausente: $name" }
   $reader = New-Object IO.StreamReader($entry.Open())
   $text = $reader.ReadToEnd(); $reader.Close()
   return [xml]$text
@@ -20,6 +23,7 @@ if ($sharedEntry) {
   foreach ($si in $sharedXml.SelectNodes("//*[local-name()='si']")) { $shared += $si.InnerText }
 }
 $sheet = $workbook.SelectNodes("//*[local-name()='sheet']") | Where-Object { $_.name -like '*MASTER COMPLETO*' }
+if (!$sheet) { throw 'A aba MASTER COMPLETO não foi encontrada.' }
 $rid = $sheet.GetAttribute('id','http://schemas.openxmlformats.org/officeDocument/2006/relationships')
 $rel = $rels.SelectNodes("//*[local-name()='Relationship']") | Where-Object { $_.Id -eq $rid }
 $target = ($rel.Target -replace '^/','')
@@ -28,15 +32,19 @@ $sheetXml = Read-XmlEntry $target
 $rows = @()
 foreach ($row in $sheetXml.SelectNodes("//*[local-name()='sheetData']/*[local-name()='row']")) {
   if ([int]$row.GetAttribute('r') -lt 3) { continue }
-  $values = @()
+  # Missing Excel cells must not shift the remaining columns.
+  $values = @('', '', '', '', '', '', '', '', '')
   foreach ($cell in $row.SelectNodes("./*[local-name()='c']")) {
+    $column = $cell.GetAttribute('r') -replace '\d',''
+    if ($column -notmatch '^[A-I]$') { continue }
+    $columnIndex = [int][char]$column - [int][char]'A'
     $valueNode = $cell.SelectSingleNode("./*[local-name()='v']")
     $value = if ($valueNode) { $valueNode.InnerText } else { '' }
     if ($cell.GetAttribute('t') -eq 's' -and $value -ne '') { $value = $shared[[int]$value] }
     if ($cell.GetAttribute('t') -eq 'inlineStr') { $value = $cell.InnerText }
-    $values += [string]$value
+    $values[$columnIndex] = [string]$value
   }
-  if ($values.Count -ge 9 -and $values[0] -ne 'MARCA') {
+  if ($values[0] -and $values[1] -and $values[8] -and $values[0] -ne 'MARCA') {
     $rows += [ordered]@{
       id = $rows.Count + 1
       marca = $values[0]
@@ -51,8 +59,8 @@ foreach ($row in $sheetXml.SelectNodes("//*[local-name()='sheetData']/*[local-na
     }
   }
 }
-$json = $rows | ConvertTo-Json -Depth 4 -Compress
+if (!$rows.Count) { throw 'Nenhum registro válido encontrado; o catálogo não foi sobrescrito.' }
+$json = ConvertTo-Json -InputObject @($rows) -Depth 4 -Compress
 Set-Content -LiteralPath $outputPath -Value ("window.MOTO_DATA = $json;") -Encoding UTF8
-Copy-Item -LiteralPath $outputPath -Destination $publishPath -Force
-$zip.Dispose()
-Write-Output "Exportados $($rows.Count) registros para $outputPath e $publishPath"
+Write-Output "Exportados $($rows.Count) registros para $outputPath"
+} finally { $zip.Dispose() }

@@ -4,6 +4,7 @@
     products: 'Data/produtos_2026-09-23-12-02-22.csv'
   };
 
+  let sessionProducts = null;
   const sanitize = (value) => String(value ?? '').trim();
   const normalizeHeader = (value) => sanitize(value)
     .normalize('NFD')
@@ -12,7 +13,9 @@
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_|_$/g, '');
 
-  function parseCsv(text, delimiter = ';') {
+  function parseCsv(text, delimiter) {
+    text = String(text).replace(/^\uFEFF/, '');
+    delimiter ||= text.split(/\r?\n/, 1)[0].includes(';') ? ';' : ',';
     const rows = [];
     let row = [];
     let current = '';
@@ -134,8 +137,36 @@
     if (!response.ok) {
       throw new Error(`Não foi possível carregar ${url}: ${response.status}`);
     }
-    return response.text();
+    return decodeCsv(await response.arrayBuffer());
   }
+
+  function decodeCsv(buffer) {
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(buffer); }
+    catch { return new TextDecoder('windows-1252').decode(buffer); }
+  }
+
+  const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  function formatPrice(value) {
+    if (value === null || value === undefined || String(value).trim() === '') return 'Não informado';
+    let text = String(value).replace(/R\$|\s/g, '');
+    if (text.includes(',')) text = text.replace(/\./g, '').replace(',', '.');
+    const number = Number(text);
+    return Number.isFinite(number) ? currency.format(number) : 'Não informado';
+  }
+
+  window.MMData = {
+    parseCsv, mapProductRows, mapCategoryRows, decodeCsv, formatPrice,
+    async importProducts(file) {
+      const rows = parseCsv(decodeCsv(await file.arrayBuffer()));
+      const headers = buildIndex(rows[0] || []);
+      if (!('descricao' in headers) || !('codigo' in headers || 'id' in headers)) throw new Error('CSV inválido: inclua as colunas Descrição e Código ou ID.');
+      const products = mapProductRows(rows);
+      sessionProducts = products.length ? products : sessionProducts;
+      if (!products.length) throw new Error('O CSV não contém produtos.');
+      window.PROJECT_DATA = { ...window.PROJECT_DATA, products, status: 'ready', notice: 'Produtos importados nesta sessão. Mantenha o CSV original para reabrir a base.', counts: { categories: window.PROJECT_DATA.categories.length, products: products.length }, loadedAt: new Date().toISOString() };
+      window.dispatchEvent(new CustomEvent('project-data-ready', { detail: window.PROJECT_DATA }));
+    }
+  };
 
   async function loadData() {
     window.PROJECT_DATA = {
@@ -149,13 +180,14 @@
     };
 
     try {
-      const [categoriesText, productsText] = await Promise.all([
+      const [categoriesResult, productsResult] = await Promise.allSettled([
         loadCsvFile(FILES.categories),
         loadCsvFile(FILES.products)
       ]);
 
-      const categories = mapCategoryRows(parseCsv(categoriesText));
-      const products = mapProductRows(parseCsv(productsText));
+      const categories = categoriesResult.status === 'fulfilled' ? mapCategoryRows(parseCsv(categoriesResult.value)) : [];
+      const products = sessionProducts || (productsResult.status === 'fulfilled' ? mapProductRows(parseCsv(productsResult.value)) : []);
+      if (!sessionProducts && categoriesResult.status === 'rejected' && productsResult.status === 'rejected') throw new Error('Não foi possível carregar a base. Abra o aplicativo por um servidor e importe o CSV de produtos.');
 
       window.PROJECT_DATA = {
         source: FILES,
@@ -164,6 +196,7 @@
         products,
         loadedAt: new Date().toISOString(),
         error: null,
+        notice: productsResult.status === 'rejected' ? 'Arquivo de produtos ausente. Importe um CSV para consultar produtos; as categorias já estão disponíveis.' : categoriesResult.status === 'rejected' ? 'Arquivo de categorias indisponível.' : '',
         counts: {
           categories: categories.length,
           products: products.length
