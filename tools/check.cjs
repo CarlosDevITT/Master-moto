@@ -16,7 +16,7 @@ for(const [,file] of scripts.matchAll(/'([^']+)'/g)) {
   if(!fs.existsSync(path.join(root,'js',file)))throw Error(`Script da aplicação ausente: ${file}`);
 }
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-for (const match of html.matchAll(/(?:src|href)="((?:css|js)\/[^"?]+)"/g)) {
+for (const match of html.matchAll(/(?:src|href)="((?:css|js|assets)\/[^"?]+)"/g)) {
   if (!fs.existsSync(path.join(root, match[1]))) throw new Error(`Recurso ausente: ${match[1]}`);
 }
 console.log('Sintaxe e recursos locais válidos.');

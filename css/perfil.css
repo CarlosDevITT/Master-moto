@@ -3,7 +3,7 @@
 .star-cell{text-align:center;min-width:92px}
 .star-btn{min-width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;gap:3px;background:#f5f6f8;color:#a0a7b2;border:1px solid #e1e4e9;font-size:18px;line-height:1;padding:0 7px;border-radius:8px;transition:.15s}
 .star-btn:hover{background:#fff5d7;border-color:#edc95c;color:#a06e00;transform:translateY(-1px)}
-.star-btn.on{min-width:78px;background:#fff4c8;border-color:#e6bd3d;color:#946900;font-size:10px;font-weight:800;letter-spacing:.03em}.star-btn.on b{font:800 12px 'Space Grotesk';color:#5d4500;margin-left:1px}
+.star-btn.on{min-width:78px;background:#fff4c8;border-color:#e6bd3d;color:#946900;font-size:10px;font-weight:800;letter-spacing:.03em}.star-btn.on b{font:800 12px 'Space Grotesk',system-ui,sans-serif;color:#5d4500;margin-left:1px}
 .bulk-stars{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-right:14px;font-size:12px}
 .bulk-star{background:#fff4c8;color:#765600;border:1px solid #ebcf72;border-radius:8px;padding:7px 10px;font-weight:700;font-size:11px}.bulk-star:hover{background:#f4d875}
 .perfil-note{margin:16px 0 0;font-size:12px;color:var(--muted)}
