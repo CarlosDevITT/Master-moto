@@ -32,7 +32,7 @@ const savedNotes = readLocalJson(NOTES_KEY, null);
 const backupNotes = readLocalJson(`${NOTES_KEY}-backup`, []);
 const validNote = (note) => note && Number.isSafeInteger(Number(note.id)) && Number(note.id) > 0 && typeof note.title === 'string' && typeof note.text === 'string' && ['warning', 'info', 'neutral'].includes(note.type) && (note.refs == null || (Array.isArray(note.refs) && note.refs.every(ref => typeof ref === 'string'))) && (note.updatedAt == null || typeof note.updatedAt === 'string');
 let notes = (Array.isArray(savedNotes) ? savedNotes : Array.isArray(backupNotes) ? backupNotes : []).filter(validNote).map(note => ({ ...note, id: Number(note.id) }));
-let state = { tab: 'todos', query: '', category: '', brand: '', engine: '', year: '', yearMin: '', yearMax: '', notesOnly: false, page: 1, pageSize: 15, sort: 'marca', dir: 1, compact: false, perfil: '', faixa: '', estrela: '' };
+let state = { tab: 'todos', query: '', category: '', brand: '', engine: '', year: '', yearMin: '', yearMax: '', notesOnly: false, page: 1, pageSize: 50, sort: 'marca', dir: 1, compact: false, perfil: '', faixa: '', estrela: '' };
 let notesUi = { type: 'all', sort: 'recent' };
 const selectedMotoIds = new Set();
 const $ = (selector) => document.querySelector(selector);
@@ -356,10 +356,10 @@ $('.nav').addEventListener('click', event => {
   const button = event.target.closest('[data-view]');
   if (!button) return;
   const view = button.dataset.view;
-  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', titulos: 'titulosView', guia: 'guideView', precificacao: 'pricingView' };
+  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', titulos: 'titulosView', guia: 'guideView', precificacao: 'pricingView', mercado: 'marketView' };
   $$('.main > .content').forEach(section => section.classList.toggle('hidden', section.id !== views[view]));
   $$('.nav-item').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-current', item === button ? 'page' : 'false'); });
-  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', titulos: 'Parâmetros para títulos', guia: 'Guia de componentes', precificacao: 'Precificação' };
+  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', titulos: 'Gerador de títulos', guia: 'Guia de componentes', precificacao: 'Precificação', mercado: 'Curva ABC Brasil' };
   $('#pageTitle').textContent = labels[view] || 'Catálogo de motos';
   if (view === 'guia') { renderGuideMotoOptions(); renderGuide(); }
 });

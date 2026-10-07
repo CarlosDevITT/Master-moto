@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "period": "2026-09",
+  "source": "https://www.fenabrave.org.br/portal/files/2026_09_02.pdf",
+  "checkedAt": "2026-10-07T13:41:09.752209+00:00",
+  "totalMonthly": 205032,
+  "totalYearToDate": 1783971,
+  "scope": "Modelos publicados nos rankings por segmento da Fenabrave; não inclui todos os modelos do país.",
+  "models": [
+    {
+      "brand": "HONDA",
+      "model": "CG 160",
+      "monthly": 48835,
+      "previous": 48052,
+      "yearToDate": 404628
+    },
+    {
+      "brand": "MOTTU",
+      "model": "SPORT 110I",
+      "monthly": 7937,
+      "previous": 11983,
+      "yearToDate": 86907
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "YBR 150",
+      "monthly": 6654,
+      "previous": 6992,
+      "yearToDate": 58728
+    },
+    {
+      "brand": "HONDA",
+      "model": "CB 300F",
+      "monthly": 4052,
+      "previous": 3222,
+      "yearToDate": 45460
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "FAZER 150",
+      "monthly": 4421,
+      "previous": 4295,
+      "yearToDate": 32259
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "FAZER 250",
+      "monthly": 3307,
+      "previous": 3608,
+      "yearToDate": 32236
+    },
+    {
+      "brand": "SHINERAY",
+      "model": "SHI 150",
+      "monthly": 544,
+      "previous": 753,
+      "yearToDate": 10563
+    },
+    {
+      "brand": "HAOJUE",
+      "model": "DK160",
+      "monthly": 850,
+      "previous": 894,
+      "yearToDate": 8967
+    },
+    {
+      "brand": "BAJAJ",
+      "model": "PULSAR N150",
+      "monthly": 1043,
+      "previous": 1127,
+      "yearToDate": 7403
+    },
+    {
+      "brand": "SHINERAY",
+      "model": "XY 150",
+      "monthly": 479,
+      "previous": 425,
+      "yearToDate": 4393
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "HUNTER 350",
+      "monthly": 724,
+      "previous": 781,
+      "yearToDate": 6408
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "SUPER METEOR 650",
+      "monthly": 417,
+      "previous": 464,
+      "yearToDate": 4120
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "METEOR",
+      "monthly": 453,
+      "previous": 479,
+      "yearToDate": 3996
+    },
+    {
+      "brand": "TRIUMPH",
+      "model": "SCRAMBLER 400",
+      "monthly": 327,
+      "previous": 294,
+      "yearToDate": 2654
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "CLASSIC 350",
+      "monthly": 155,
+      "previous": 158,
+      "yearToDate": 1493
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "SHOTGUN 650",
+      "monthly": 104,
+      "previous": 104,
+      "yearToDate": 1179
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "BEAR 650",
+      "monthly": 73,
+      "previous": 72,
+      "yearToDate": 766
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "CLASSIC 650",
+      "monthly": 45,
+      "previous": 83,
+      "yearToDate": 554
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "ELIMINATOR 500",
+      "monthly": 52,
+      "previous": 45,
+      "yearToDate": 529
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "VULCAN S",
+      "monthly": 41,
+      "previous": 37,
+      "yearToDate": 383
+    },
+    {
+      "brand": "HONDA",
+      "model": "NXR160",
+      "monthly": 17449,
+      "previous": 16270,
+      "yearToDate": 148975
+    },
+    {
+      "brand": "HONDA",
+      "model": "XRE 190",
+      "monthly": 4778,
+      "previous": 4374,
+      "yearToDate": 40592
+    },
+    {
+      "brand": "HONDA",
+      "model": "XRE 300",
+      "monthly": 4462,
+      "previous": 3593,
+      "yearToDate": 32446
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "XTZ 250",
+      "monthly": 3373,
+      "previous": 3614,
+      "yearToDate": 31789
+    },
+    {
+      "brand": "SHINERAY",
+      "model": "SHI 175",
+      "monthly": 2409,
+      "previous": 2461,
+      "yearToDate": 23081
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "CROSSER 150",
+      "monthly": 3073,
+      "previous": 3483,
+      "yearToDate": 22789
+    },
+    {
+      "brand": "HONDA",
+      "model": "XR 300L",
+      "monthly": 1005,
+      "previous": 964,
+      "yearToDate": 10840
+    },
+    {
+      "brand": "AVELLOZ",
+      "model": "AZ160",
+      "monthly": 1294,
+      "previous": 1318,
+      "yearToDate": 10179
+    },
+    {
+      "brand": "SHINERAY",
+      "model": "SHI 250",
+      "monthly": 982,
+      "previous": 1045,
+      "yearToDate": 7690
+    },
+    {
+      "brand": "HAOJUE",
+      "model": "DL 160",
+      "monthly": 281,
+      "previous": 321,
+      "yearToDate": 2774
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "HIMALAYAN",
+      "monthly": 808,
+      "previous": 753,
+      "yearToDate": 5831
+    },
+    {
+      "brand": "HONDA",
+      "model": "NX 500",
+      "monthly": 542,
+      "previous": 561,
+      "yearToDate": 4798
+    },
+    {
+      "brand": "BMW",
+      "model": "R1300GSA",
+      "monthly": 311,
+      "previous": 305,
+      "yearToDate": 2566
+    },
+    {
+      "brand": "TRIUMPH",
+      "model": "TIGER 900",
+      "monthly": 282,
+      "previous": 245,
+      "yearToDate": 2207
+    },
+    {
+      "brand": "HONDA",
+      "model": "NC 750X",
+      "monthly": 171,
+      "previous": 251,
+      "yearToDate": 2157
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "XTZ 690",
+      "monthly": 148,
+      "previous": 124,
+      "yearToDate": 1494
+    },
+    {
+      "brand": "BMW",
+      "model": "R1300GS",
+      "monthly": 155,
+      "previous": 130,
+      "yearToDate": 1383
+    },
+    {
+      "brand": "CFMOTO",
+      "model": "IBEX 450",
+      "monthly": 284,
+      "previous": 368,
+      "yearToDate": 1375
+    },
+    {
+      "brand": "BMW",
+      "model": "F900 GS",
+      "monthly": 196,
+      "previous": 141,
+      "yearToDate": 1302
+    },
+    {
+      "brand": "HONDA",
+      "model": "CRF 1100L",
+      "monthly": 86,
+      "previous": 172,
+      "yearToDate": 1261
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "MT03",
+      "monthly": 800,
+      "previous": 767,
+      "yearToDate": 7033
+    },
+    {
+      "brand": "BAJAJ",
+      "model": "DOMINAR D400",
+      "monthly": 795,
+      "previous": 818,
+      "yearToDate": 6665
+    },
+    {
+      "brand": "BAJAJ",
+      "model": "NS400 Z",
+      "monthly": 405,
+      "previous": 554,
+      "yearToDate": 4382
+    },
+    {
+      "brand": "BAJAJ",
+      "model": "DOMINAR NS160",
+      "monthly": 440,
+      "previous": 458,
+      "yearToDate": 3931
+    },
+    {
+      "brand": "BAJAJ",
+      "model": "DOMINAR NS200",
+      "monthly": 250,
+      "previous": 251,
+      "yearToDate": 2985
+    },
+    {
+      "brand": "HONDA",
+      "model": "CB 500",
+      "monthly": 312,
+      "previous": 337,
+      "yearToDate": 2932
+    },
+    {
+      "brand": "BAJAJ",
+      "model": "DOMINAR D250",
+      "monthly": 316,
+      "previous": 286,
+      "yearToDate": 2603
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "Z900",
+      "monthly": 196,
+      "previous": 197,
+      "yearToDate": 1962
+    },
+    {
+      "brand": "ROYAL ENFIELD",
+      "model": "GUERRILLA 450",
+      "monthly": 193,
+      "previous": 205,
+      "yearToDate": 1876
+    },
+    {
+      "brand": "HONDA",
+      "model": "CB 650R",
+      "monthly": 150,
+      "previous": 221,
+      "yearToDate": 1622
+    },
+    {
+      "brand": "HONDA",
+      "model": "BIZ",
+      "monthly": 23355,
+      "previous": 21245,
+      "yearToDate": 202600
+    },
+    {
+      "brand": "HONDA",
+      "model": "POP 110I",
+      "monthly": 24277,
+      "previous": 23622,
+      "yearToDate": 188707
+    },
+    {
+      "brand": "HONDA",
+      "model": "PCX 160",
+      "monthly": 4017,
+      "previous": 4240,
+      "yearToDate": 39756
+    },
+    {
+      "brand": "SHINERAY",
+      "model": "SHI 125",
+      "monthly": 3590,
+      "previous": 3591,
+      "yearToDate": 30790
+    },
+    {
+      "brand": "HONDA",
+      "model": "ELITE 125",
+      "monthly": 2005,
+      "previous": 2270,
+      "yearToDate": 23348
+    },
+    {
+      "brand": "HONDA",
+      "model": "ADV 160",
+      "monthly": 1467,
+      "previous": 1692,
+      "yearToDate": 15058
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "NMAX",
+      "monthly": 1406,
+      "previous": 1502,
+      "yearToDate": 14787
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "AEROX 160",
+      "monthly": 1147,
+      "previous": 1233,
+      "yearToDate": 12251
+    },
+    {
+      "brand": "AVELLOZ",
+      "model": "AZ1",
+      "monthly": 1074,
+      "previous": 1155,
+      "yearToDate": 10978
+    },
+    {
+      "brand": "SHINERAY",
+      "model": "SHI 50",
+      "monthly": 1116,
+      "previous": 1161,
+      "yearToDate": 9613
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "YZF R15",
+      "monthly": 1085,
+      "previous": 1067,
+      "yearToDate": 9529
+    },
+    {
+      "brand": "YAMAHA",
+      "model": "YZF R3",
+      "monthly": 120,
+      "previous": 150,
+      "yearToDate": 1219
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "NINJA 500",
+      "monthly": 88,
+      "previous": 101,
+      "yearToDate": 958
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "NINJA ZX-6R",
+      "monthly": 88,
+      "previous": 98,
+      "yearToDate": 867
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "NINJA 300",
+      "monthly": 90,
+      "previous": 85,
+      "yearToDate": 697
+    },
+    {
+      "brand": "BMW",
+      "model": "S1000 RR",
+      "monthly": 79,
+      "previous": 8,
+      "yearToDate": 682
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "NINJA ZX-4R",
+      "monthly": 81,
+      "previous": 109,
+      "yearToDate": 665
+    },
+    {
+      "brand": "TRIUMPH",
+      "model": "DAYTONA 660",
+      "monthly": 5,
+      "previous": 16,
+      "yearToDate": 201
+    },
+    {
+      "brand": "SUZUKI",
+      "model": "GSX-8 R",
+      "monthly": 12,
+      "previous": 13,
+      "yearToDate": 144
+    },
+    {
+      "brand": "KAWASAKI",
+      "model": "NINJA 650",
+      "monthly": 6,
+      "previous": 9,
+      "yearToDate": 96
+    },
+    {
+      "brand": "H.DAVIDSON",
+      "model": "ROAD GLIDE",
+      "monthly": 33,
+      "previous": 35,
+      "yearToDate": 400
+    },
+    {
+      "brand": "BMW",
+      "model": "R 1300 RT",
+      "monthly": 31,
+      "previous": 30,
+      "yearToDate": 303
+    },
+    {
+      "brand": "H.DAVIDSON",
+      "model": "STREET GLIDE",
+      "monthly": 8,
+      "previous": 19,
+      "yearToDate": 163
+    },
+    {
+      "brand": "HONDA",
+      "model": "GOLDWING",
+      "monthly": 4,
+      "previous": 10,
+      "yearToDate": 23
+    },
+    {
+      "brand": "BMW",
+      "model": "K 1600",
+      "monthly": 0,
+      "previous": 1,
+      "yearToDate": 10
+    },
+    {
+      "brand": "BMW",
+      "model": "R1250 RT",
+      "monthly": 0,
+      "previous": 0,
+      "yearToDate": 1
+    },
+    {
+      "brand": "H.DAVIDSON",
+      "model": "ULTRA LIMITED",
+      "monthly": 1,
+      "previous": 0,
+      "yearToDate": 1
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+name: Atualizar mercado de motos
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: market-data
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pypdf==6.10.0
+      - run: python tools/update-market.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar dados e publicar atualização no repositório
+        run: |
+          node -e "require('./js/market-engine.js').validate(require('./Data/market-sales.json'))"
+          if ! git diff --quiet -- Data/market-sales.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add Data/market-sales.json
+            git commit -m 'Atualiza emplacamentos oficiais de motos'
+            git push
+          fi

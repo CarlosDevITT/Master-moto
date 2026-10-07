@@ -10,3 +10,5 @@ for (const match of html.matchAll(/(?:src|href)="((?:css|js)\/[^"?]+)"/g)) {
   if (!fs.existsSync(path.join(root, match[1]))) throw new Error(`Recurso ausente: ${match[1]}`);
 }
 console.log('Sintaxe e recursos locais válidos.');
+require('../js/market-engine.js').validate(JSON.parse(fs.readFileSync(path.join(root, 'Data', 'market-sales.json'), 'utf8')));
+console.log('Fonte e totais do mercado válidos.');

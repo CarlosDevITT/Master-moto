@@ -39,3 +39,10 @@ test('Valores brasileiros são interpretados e importações inválidas são rec
   const d = E.defaults(); assert.deepEqual(E.validate(d), d);
   d.categories.push(d.categories[0]); assert.throws(() => E.validate(d));
 });
+test('Preferências antigas continuam válidas e a organização aceita apenas painéis conhecidos', () => {
+  const d = E.defaults(); delete d.ui;
+  assert.deepEqual(E.validate(d).ui, {});
+  d.ui = { settings: true, 'example17:channels': false, 'example17:breakdown-premium': true };
+  assert.deepEqual(E.validate(d).ui, d.ui);
+  d.ui.unknown = true; assert.throws(() => E.validate(d));
+});

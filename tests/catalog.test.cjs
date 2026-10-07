@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 const root = path.resolve(__dirname, '..');
-async function app(seed = {}, storageFailure = false) {
+async function app(seed = {}, storageFailure = false, marketFailure = false) {
   const errors = [];
   const console = new VirtualConsole();
   console.on('jsdomError', error => errors.push(error));
@@ -16,14 +16,15 @@ async function app(seed = {}, storageFailure = false) {
   w.URL.createObjectURL = () => 'blob:test';
   w.URL.revokeObjectURL = () => {};
   w.fetch = async url => {
-    const file = path.join(root, url);
+    if (marketFailure && url === 'Data/market-sales.json') throw new Error('offline');
+    const file = path.join(root, url === 'Data/market-sales.json' ? 'tests/fixtures/market-september-2026.json' : url);
     const ok = fs.existsSync(file);
     const data = ok ? fs.readFileSync(file) : Buffer.from('');
     return { ok, status: ok ? 200 : 404, arrayBuffer: async () => data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) };
   };
   for (const [key, value] of Object.entries(seed)) w.localStorage.setItem(key, value);
   if (storageFailure) w.Storage.prototype.setItem = () => { throw new Error('quota'); };
-  for (const file of ['data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'pricing-engine.js', 'pricing.js', 'catalog-tools.js', 'accessibility.js']) {
+  for (const file of ['data.js', 'guide-data.js', 'perfil-data.js', 'perfil.js', 'app.js', 'pricing-engine.js', 'pricing.js', 'market-engine.js', 'market.js', 'catalog-tools.js', 'accessibility.js']) {
     const script = w.document.createElement('script');
     script.textContent = fs.readFileSync(path.join(root, 'js', file), 'utf8');
     w.document.body.append(script);
@@ -37,6 +38,59 @@ const NOTES = 'master-motos-notes-v1';
 const input = (w, id, value) => { const el = w.document.getElementById(id); el.value = value; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
 const submit = (w, id) => w.document.getElementById(id).dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
 const pricingInput = (a, selector, value) => { const el = a.doc.querySelector(selector); el.value = value; el.dispatchEvent(new a.w.Event('input', { bubbles: true })); return el; };
+test('Precificação mostra entrada rápida, sincroniza cenário e recalcula os preços imediatamente', async () => {
+  const a = await app();
+  try {
+    const host = a.doc.querySelector('[data-pricing-category="example17"]');
+    assert.equal(host.querySelectorAll('.pricing-quick-grid input').length, 4);
+    assert.equal(host.querySelector('.pricing-scenarios').open, false);
+    const before = host.querySelector('[data-result-price]').textContent;
+    pricingInput(a, '[data-pricing-category="example17"] [data-quick-scenario="marginPct"]', '20');
+    assert.notEqual(host.querySelector('[data-result-price]').textContent, before);
+    assert.equal(host.querySelector('[data-scenario-id="tax23"] [data-scenario-field="marginPct"]').value, '20');
+    const selected = host.querySelector('[data-scenario-select]'); selected.value = 'tax18'; selected.dispatchEvent(new a.w.Event('change', { bubbles: true }));
+    assert.equal(host.querySelector('[data-quick-scenario="taxPct"]').value, '18');
+    host.querySelector('[data-margin="15"]').click(); assert.equal(host.querySelector('[data-quick-scenario="marginPct"]').value, '15');
+    pricingInput(a, '[data-pricing-category="example17"] [data-category-field="shipping"]', '');
+    assert.equal(a.w.MMPricing.exportData().categories[0].shipping, 0);
+    assert.notEqual(host.querySelector('[data-result-price]').textContent, '—');
+  } finally { a.close(); }
+});
+test('Precificação guarda painéis abertos e produtos recolhidos após recarga e backup', async () => {
+  const a = await app(); let seed;
+  try {
+    for (const key of ['settings', 'example17:channels', 'example17:breakdown-premium']) {
+      const panel = a.doc.querySelector(`[data-pricing-panel="${key}"]`); panel.open = true; panel.dispatchEvent(new a.w.Event('toggle'));
+    }
+    a.doc.querySelector('[data-pricing-category="example17"] [data-pricing-action="collapse"]').click();
+    const exported = a.w.MMCatalogTools.snapshot().pricing;
+    assert.equal(exported.ui.settings, true); assert.equal(exported.categories[0].collapsed, true);
+    seed = { [a.w.MMPricing.storageKey]: a.w.localStorage.getItem(a.w.MMPricing.storageKey) };
+    a.doc.querySelector('[data-pricing-action="expand-all"]').click(); assert.equal(a.w.MMPricing.exportData().categories[0].collapsed, false);
+    a.doc.querySelector('[data-pricing-action="collapse-all"]').click(); assert.ok(a.w.MMPricing.exportData().categories.every(c => c.collapsed));
+  } finally { a.close(); }
+  const b = await app(seed);
+  try {
+    assert.equal(b.doc.querySelector('[data-pricing-panel="settings"]').open, true);
+    assert.equal(b.doc.querySelector('[data-pricing-panel="example17:channels"]').open, true);
+    assert.equal(b.doc.querySelector('[data-pricing-panel="example17:breakdown-premium"]').open, true);
+    assert.ok(b.doc.querySelector('[data-pricing-category="example17"] .pricing-category-body').classList.contains('hidden'));
+    const panel = b.doc.querySelector('[data-pricing-panel="settings"]'); panel.open = false; panel.dispatchEvent(new b.w.Event('toggle'));
+    assert.equal(JSON.parse(b.w.localStorage.getItem(b.w.MMPricing.storageKey)).ui.settings, false);
+  } finally { b.close(); }
+});
+test('Recolher com um custo inválido preserva o último custo salvo e guarda a organização', async () => {
+  const a = await app();
+  try {
+    a.w.MMPricing.save(); pricingInput(a, '[data-category-field="cost"]', '');
+    a.doc.querySelector('[data-pricing-action="collapse"]').click();
+    const saved = JSON.parse(a.w.localStorage.getItem(a.w.MMPricing.storageKey));
+    assert.equal(saved.categories[0].cost, 541.32); assert.equal(saved.categories[0].collapsed, true);
+    const panel = a.doc.querySelector('[data-pricing-panel="fees"]'); panel.open = true; panel.dispatchEvent(new a.w.Event('toggle'));
+    assert.equal(JSON.parse(a.w.localStorage.getItem(a.w.MMPricing.storageKey)).ui.fees, true);
+    assert.equal(a.w.MMPricing.save(), false);
+  } finally { a.close(); }
+});
 test('Precificação navega, salva automaticamente valores brasileiros e recupera simulações após recarregar', async () => {
   const a = await app(); let seed;
   try {
@@ -216,6 +270,8 @@ test('Busca combina marca, modelo, cilindrada e ano de aplicação em qualquer o
 test('Busca, paginação e limpar filtros mantêm a interface consistente', async () => {
   const a = await app();
   try {
+    a.doc.querySelector('#pageSize').value = '10';
+    a.doc.querySelector('#pageSize').dispatchEvent(new a.w.Event('change', { bubbles: true }));
     input(a.w, 'searchLarge', 'Honda');
     assert.equal(a.doc.querySelector('#search').value, 'Honda');
     assert.ok([...a.doc.querySelectorAll('#motoRows .brand-cell')].every(cell => cell.textContent === 'Honda'));
@@ -256,6 +312,55 @@ test('Limpar busca e filtros também redefine a categoria e a densidade informa 
     assert.equal(a.doc.querySelector('#compactBtn').getAttribute('aria-pressed'), 'true');
     assert.match(a.doc.querySelector('#compactBtn').textContent, /Expandir/);
   } finally { a.close(); }
+});
+test('Painel ABC carrega fonte, mantém curva ao filtrar e abre aplicações cadastradas', async () => {
+  const a = await app();
+  try {
+    assert.equal(a.w.MMMarket.ranked().length, 77);
+    a.doc.querySelector('[data-view="mercado"]').click();
+    assert.equal([...a.doc.querySelectorAll('.main > .content')].filter(el => !el.classList.contains('hidden')).length, 1);
+    assert.match(a.doc.querySelector('#marketPeriod').textContent, /setembro de 2026/);
+    assert.match(a.doc.querySelector('#marketKpis').textContent, /93,55%/);
+    input(a.w, 'marketSearch', 'Honda XRE 190');
+    assert.equal(a.doc.querySelectorAll('#marketRows tr').length, 1);
+    assert.equal(a.doc.querySelector('#marketRows .market-curve').textContent, 'A');
+    a.doc.querySelector('#marketRows [data-market-model]').click();
+    assert.ok(!a.doc.querySelector('#catalogView').classList.contains('hidden'));
+    assert.ok([...a.doc.querySelectorAll('#motoRows .model-cell')].every(el => el.textContent.includes('XRE 190')));
+  } finally { a.close(); }
+});
+test('Curva automática respeita ajuste manual e gerador prioriza mercado sem retirar anos', async () => {
+  const a = await app();
+  try {
+    const rec = a.w.MOTO_DATA.find(r => r.modelo === 'XRE 190');
+    assert.equal(a.w.MMPerfil.get(rec).estrela, 'A');
+    a.w.MMPerfil.replaceData({ [rec.id]: { estrela: 'C' } });
+    assert.equal(a.w.MMPerfil.get(rec).estrela, 'C'); assert.equal(a.w.MMMarket.get(rec).curve, 'A');
+    a.doc.querySelector('#marketTitles').click(); assert.equal(a.doc.querySelector('#tgEscopo').value, 'mercadoA');
+    input(a.w, 'tgPeca', 'Filtro de Óleo');
+    const titles = [...a.doc.querySelectorAll('#tgBody .tg-title')].map(el => el.textContent);
+    assert.ok(titles.length > 0); assert.ok(titles.every(t => /\d{4}-\d{4}/.test(t)));
+    input(a.w, 'tgPeca', 'Uma peça com um nome extremamente extenso que não cabe no limite de título permitido');
+    assert.ok([...a.doc.querySelectorAll('#tgBody .tg-copy')].every(button => button.disabled));
+    assert.match(a.doc.querySelector('#tgInfo').textContent, /acima do limite/);
+  } finally { a.close(); }
+});
+test('Ranking salvo continua disponível sem rede e informa a falha de atualização', async () => {
+  const raw = fs.readFileSync(path.join(root, 'tests/fixtures/market-september-2026.json'), 'utf8');
+  const a = await app({ 'mm-market-cache-v1': raw }, false, true);
+  try { assert.equal(a.w.MMMarket.ranked().length, 77); assert.match(a.doc.querySelector('#marketStatus').textContent, /último período salvo/); }
+  finally { a.close(); }
+});
+test('Catálogo ampliado exibe 100 motos e preserva a preferência após recarga', async () => {
+  const a = await app(); let seed;
+  try {
+    assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 50);
+    const select = a.doc.querySelector('#pageSize'); select.value = '100'; select.dispatchEvent(new a.w.Event('change', { bubbles: true }));
+    assert.equal(a.doc.querySelectorAll('#motoRows tr[data-id]').length, 100); seed = storageSeed(a.w);
+  } finally { a.close(); }
+  const b = await app(seed);
+  try { assert.equal(b.doc.querySelector('#pageSize').value, '100'); assert.equal(b.doc.querySelectorAll('#motoRows tr[data-id]').length, 100); }
+  finally { b.close(); }
 });
 const storageSeed = w => Object.fromEntries(Array.from({ length: w.localStorage.length }, (_, index) => {
   const key = w.localStorage.key(index); return [key, w.localStorage.getItem(key)];
@@ -349,7 +454,7 @@ test('Colunas escolhidas e modo cartões persistem após paginação e recarga',
     assert.ok(a.doc.querySelector('.note-cell').hidden);
     assert.equal(a.doc.querySelector('th[data-column="model"]').hidden,false);
     a.doc.querySelector('[data-layout="cards"]').click();
-    assert.equal(a.doc.querySelectorAll('.moto-card').length,15);
+    assert.equal(a.doc.querySelectorAll('.moto-card').length,50);
     assert.equal(a.doc.querySelector('#catalogCards').classList.contains('hidden'),false);
     seed=storageSeed(a.w);
   } finally { a.close(); }

@@ -21,7 +21,8 @@
     return {
       layout: ['auto', 'table', 'cards'].includes(value?.layout) ? value.layout : 'auto',
       columns: Array.isArray(value?.columns) ? [...new Set(value.columns.filter(key => allColumns.includes(key)))] : [...allColumns],
-      compact: value?.compact === true
+      compact: value?.compact === true,
+      pageSize: [10, 15, 25, 50, 100].includes(value?.pageSize) ? value.pageSize : 50
     };
   }
   let preferences = sanitizePreferences(readLocalJson(PREFS_KEY, {}));
@@ -39,7 +40,7 @@
       if (!allowed.includes(result[key])) throw new Error('Filtro favorito inválido.');
     }
     result.notesOnly = value.notesOnly === true;
-    result.pageSize = [10, 15, 25, 50].includes(value.pageSize) ? value.pageSize : 15;
+    result.pageSize = [10, 15, 25, 50, 100].includes(value.pageSize) ? value.pageSize : 50;
     result.dir = value.dir === -1 ? -1 : 1;
     return result;
   }
@@ -127,7 +128,7 @@
     favorites = clone(data.favorites); preferences = sanitizePreferences(data.preferences);
     applyTheme(data.theme); selectedMotoIds.clear();
     // Refresh both filter values and dynamically rebuilt options.
-    state = { ...state, ...cleanFilter({}), page: 1, compact: preferences.compact };
+    state = { ...state, ...cleanFilter({}), page: 1, compact: preferences.compact, pageSize: preferences.pageSize };
     populateOptions(); syncFilters(); renderFavorites(); applyPreferences(); render();
     $('#lastUpdate').textContent = 'agora'; updateRecovery();
   }
@@ -286,6 +287,7 @@
   $('#allColumns').addEventListener('click', () => savePreferences({ ...preferences, columns: [...allColumns] }));
   $$('[data-layout]').forEach(button => button.addEventListener('click', () => savePreferences({ ...preferences, layout: button.dataset.layout })));
   $('#compactBtn').addEventListener('click', () => savePreferences({ ...preferences, compact: state.compact }));
+  $('#pageSize').addEventListener('change', () => savePreferences({ ...preferences, pageSize: state.pageSize }));
   window.addEventListener('resize', () => { if (preferences.layout === 'auto') render(false); });
   $('#catalogCards').addEventListener('change', event => {
     if (!event.target.matches('.card-check')) return;
@@ -313,5 +315,6 @@
     if (applyBulk({ category: $('#bulkCategory').value, profile: $('#bulkProfile').value, range: $('#bulkRange').value, curve: $('#bulkCurve').value })) $('#bulkEditBackdrop').classList.add('hidden');
   });
   window.MMCatalogTools = { render: renderTools, syncSelection, snapshot, validateBackup, restoreBackup, stageRestore, saveFavorite, applyFavorite, applyBulk };
+  state.pageSize = preferences.pageSize; $('#pageSize').value = String(state.pageSize);
   renderFavorites(); applyPreferences(); updateRecovery(); render(false);
 })();

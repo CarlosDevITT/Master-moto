@@ -22,7 +22,8 @@ window.MMPerfil = (function () {
   }
   function get(r) {
     const o = over[r.id] || {};
-    return { perfil: o.perfil || derivePerfil(r), faixa: faixaById[o.faixa] ? o.faixa : deriveFaixa(r), valor: o.valor || '', estrela: o.estrela || '', manual: Boolean(o.perfil || o.faixa) };
+    const market = window.MMMarket?.get(r);
+    return { perfil: o.perfil || derivePerfil(r), faixa: faixaById[o.faixa] ? o.faixa : deriveFaixa(r), valor: o.valor || '', estrela: o.estrela || market?.curve || '', market, manual: Boolean(o.perfil || o.faixa) };
   }
   function set(id, patch) {
     const next = { ...(over[id] || {}), ...patch };
@@ -34,7 +35,7 @@ window.MMPerfil = (function () {
 
   function cells(r) {
     const g = get(r); const f = faixaById[g.faixa];
-    const star = g.estrela ? `<button class="star-btn on" title="CURVA ${g.estrela} — clique para trocar">CURVA <b>${g.estrela}</b></button>` : '<button class="star-btn" title="Marcar como CURVA A, B ou C">☆</button>';
+    const star = g.estrela ? `<button class="star-btn on" title="CURVA ${g.estrela} · ${over[r.id]?.estrela ? 'ajuste manual' : 'automática · Fenabrave'} — clique para trocar">CURVA <b>${g.estrela}</b>${over[r.id]?.estrela ? '' : ' <small>auto</small>'}</button>` : '<button class="star-btn" title="Marcar como CURVA A, B ou C">☆</button>';
     return `<td class="perfil-cell">${esc(g.perfil)}</td><td><span class="faixa-badge" style="--c:${f.cor}" title="${esc(f.faixa)}${g.manual ? ' · ajustada manualmente' : ''}">${esc(f.label)}</span></td><td class="star-cell">${star}</td>`;
   }
   function match(r, s) {
@@ -75,7 +76,7 @@ window.MMPerfil = (function () {
     const nome = norm(r.nomeTitulo).includes(norm(r.marca)) ? r.nomeTitulo : `${r.marca} ${r.nomeTitulo}`;
     const anos = r.anoInicial && r.anoFinal ? (r.anoInicial === r.anoFinal ? `${r.anoInicial}` : `${r.anoInicial}-${r.anoFinal}`) : '';
     const build = (o) => [peca, o.a1 && a1, o.a2 && a2, o.marca ? nome : r.nomeTitulo, o.anos && anos].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-    const steps = [{ a1: 1, a2: 1, marca: 1, anos: 1 }, { a1: 1, a2: 1, marca: 1, anos: 0 }, { a1: 1, a2: 0, marca: 1, anos: 0 }, { a1: 1, a2: 0, marca: 0, anos: 0 }, { a1: 0, a2: 0, marca: 0, anos: 0 }];
+    const steps = [{ a1: 0, a2: 0, marca: 1, anos: 1 }, { a1: 0, a2: 0, marca: 0, anos: 1 }];
     for (const s of steps) { const t = build(s); if (t.length <= CFG.limiteTitulo) return t; }
     return build(steps[steps.length - 1]);
   }
@@ -85,14 +86,16 @@ window.MMPerfil = (function () {
     const nivel = $('#tgNivel').value || nivelPorPreco(preco);
     const escopo = $('#tgEscopo').value; const so = $('#tgCompat').checked;
     let base = escopo === 'filtradas' ? filtered() : escopo === 'estrelas' ? records.filter((r) => get(r).estrela) : records.slice();
+    if (escopo === 'mercadoA' || escopo === 'mercado') base = base.filter(r => window.MMMarket?.get(r) && (escopo !== 'mercadoA' || window.MMMarket.get(r).curve === 'A')).sort((a, b) => window.MMMarket.get(b).units - window.MMMarket.get(a).units);
     if (nivel && so) base = base.filter((r) => pecaById[nivel].faixas.includes(get(r).faixa));
     return { peca, nivel, rows: base.map((r) => ({ r, t: peca ? titulo(r, peca, nivel) : '' })) };
   }
   function renderTitulos() {
     if (!$('#tgBody')) return;
     const { peca, nivel, rows } = listaTitulos();
-    $('#tgInfo').textContent = !peca ? 'Use esta tela para consultar os parâmetros que serão usados na criação dos títulos.' : `${rows.length} moto(s) com parâmetros para a peça ${peca}`;
-    $('#tgBody').innerHTML = rows.slice(0, 200).map(({ r, t }, i) => { const g = get(r); const f = faixaById[g.faixa]; return `<tr><td>${esc(r.marca)} ${esc(r.modelo)}</td><td><span class="faixa-badge" style="--c:${f.cor}">${esc(f.label)}</span></td><td>${g.estrela ? '★ ' + g.estrela : ''}</td><td class="tg-title">${esc(t)}</td><td class="tg-len ${t.length > CFG.limiteTitulo ? 'over' : ''}">${t ? t.length : ''}</td><td><button class="subtle-btn tg-copy" data-i="${i}" ${t ? '' : 'disabled'}>Copiar</button></td></tr>`; }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:#8a909b">Nenhuma moto para os critérios escolhidos.</td></tr>';
+    const oversized = rows.filter(row => row.t.length > CFG.limiteTitulo).length;
+    $('#tgInfo').textContent = !peca ? 'Informe o nome da peça para gerar os títulos.' : `${rows.length} moto(s) para ${peca}${oversized ? ` · ${oversized} título(s) acima do limite: reduza o nome da peça` : ''}${rows.length > 200 ? ' · exibindo os primeiros 200; exportação inclui os títulos válidos' : ''}`;
+    $('#tgBody').innerHTML = rows.slice(0, 200).map(({ r, t }, i) => { const g = get(r); const f = faixaById[g.faixa]; return `<tr><td>${esc(r.marca)} ${esc(r.modelo)}</td><td><span class="faixa-badge" style="--c:${f.cor}">${esc(f.label)}</span></td><td>${g.estrela ? '★ ' + g.estrela : ''}</td><td class="tg-title">${esc(t)}</td><td class="tg-len ${t.length > CFG.limiteTitulo ? 'over' : ''}">${t ? t.length : ''}</td><td><button class="subtle-btn tg-copy" data-i="${i}" ${t && t.length <= CFG.limiteTitulo ? '' : 'disabled'}>Copiar</button></td></tr>`; }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:#8a909b">Nenhuma moto para os critérios escolhidos.</td></tr>';
     renderTitulos.last = rows;
   }
 
@@ -110,7 +113,7 @@ window.MMPerfil = (function () {
     const t = $('#titulosView'); if (!t) return;
     t.classList.toggle('hidden', view !== 'titulos');
     if (view !== 'guia') $('#guideView')?.classList.add('hidden');
-    if (view === 'titulos') { ['#catalogView', '#dashboardView', '#notesView'].forEach((s) => $(s)?.classList.add('hidden')); $('#pageTitle').textContent = 'Parâmetros para títulos'; renderTitulos(); }
+    if (view === 'titulos') { ['#catalogView', '#dashboardView', '#notesView'].forEach((s) => $(s)?.classList.add('hidden')); $('#pageTitle').textContent = 'Gerador de títulos'; renderTitulos(); }
   }
 
   function init() {
@@ -125,14 +128,14 @@ window.MMPerfil = (function () {
     /* estrela por linha */
     $('#motoRows').addEventListener('click', (e) => { const b = e.target.closest('.star-btn'); if (!b) return; const id = Number(b.closest('tr').dataset.id); const rec = records.find((r) => Number(r.id) === id); set(id, { estrela: nextStar(get(rec).estrela) }); render(); });
     /* estrela em lote */
-    $('.bulk-actions').insertAdjacentHTML('afterbegin', '<span class="bulk-stars">Marcar selecionados: <button type="button" class="bulk-star" data-star="A">CURVA A</button><button type="button" class="bulk-star" data-star="B">CURVA B</button><button type="button" class="bulk-star" data-star="C">CURVA C</button><button type="button" class="bulk-star" data-star="">Tirar curva</button></span>');
+    $('.bulk-actions').insertAdjacentHTML('afterbegin', '<span class="bulk-stars">Marcar selecionados: <button type="button" class="bulk-star" data-star="A">CURVA A</button><button type="button" class="bulk-star" data-star="B">CURVA B</button><button type="button" class="bulk-star" data-star="C">CURVA C</button><button type="button" class="bulk-star" data-star="">Usar curva automática</button></span>');
     $('#bulkBar').addEventListener('click', (e) => { const b = e.target.closest('.bulk-star'); if (!b) return; const ids = [...selectedMotoIds]; ids.forEach((id) => set(id, { estrela: b.dataset.star })); render(); toast(b.dataset.star ? `${ids.length} moto(s) marcada(s) ${estrelaLabel(b.dataset.star)}` : `${ids.length} moto(s) sem curva`); });
     /* campos no cadastro */
     $('#nomeTitulo').closest('label').insertAdjacentHTML('afterend',
       `<label>Perfil<select id="fPerfil"><option value="">Automático (pela categoria)</option>${opt(CFG.perfis.map((p) => [p, p]))}</select></label>` +
       `<label>Faixa de valor<select id="fFaixa"><option value="">Automática (marca e cilindrada)</option>${opt(CFG.faixas.map((f) => [f.id, `${f.label} (${f.faixa})`]))}</select></label>` +
       `<label>Valor médio da moto (R$)<input id="fValor" type="number" min="0" step="100" placeholder="Opcional"></label>` +
-      `<label>Curva<select id="fEstrela"><option value="">Sem curva</option><option value="A">CURVA A</option><option value="B">CURVA B</option><option value="C">CURVA C</option></select></label>`);
+      `<label>Curva<select id="fEstrela"><option value="">Automática (mercado)</option><option value="A">CURVA A</option><option value="B">CURVA B</option><option value="C">CURVA C</option></select></label>`);
     const origOpen = openMotoModal;
     openMotoModal = function (id = null) { origOpen(id); const rec = id ? records.find((r) => r.id === id) : null; const o = rec ? (over[rec.id] || {}) : {}; $('#fPerfil').value = o.perfil || ''; $('#fFaixa').value = o.faixa || ''; $('#fValor').value = o.valor || ''; $('#fEstrela').value = o.estrela || ''; };
 
@@ -142,26 +145,27 @@ window.MMPerfil = (function () {
     $('.nav').insertAdjacentHTML('beforeend', '<button class="nav-item" data-view="titulos"><span class="nav-icon">✎</span> Gerador de títulos</button>');
 
     $('#notesView').insertAdjacentHTML('afterend', `<section class="content hidden" id="titulosView"><div class="hero-row"><div><p class="eyebrow">MÓDULO 03 · ANÚNCIOS</p><h1>Gerador de títulos</h1><p class="lede">Combine a peça com o perfil da moto: peça simples para moto simples, peça premium para moto de valor alto.</p></div></div>
-<div class="workspace-card tg-card"><div class="tg-form"><label>Nome da peça<input id="tgPeca" placeholder="Ex.: Pastilha de Freio Dianteira"></label><label>Preço da peça (R$)<input id="tgPreco" type="number" min="0" placeholder="Opcional"></label><label>Nível da peça<select id="tgNivel"><option value="">Automático (preço ou moto)</option>${opt(CFG.pecas.map((p) => [p.id, p.label]))}</select></label><label>Motos<select id="tgEscopo"><option value="filtradas">Filtradas no catálogo</option><option value="estrelas">Só com ★ (A, B, C)</option><option value="todas">Todas</option></select></label><label class="check-filter"><input id="tgCompat" type="checkbox" checked> Só motos compatíveis com o nível</label></div>
+<div class="workspace-card tg-card"><div class="tg-form"><label>Nome da peça<input id="tgPeca" placeholder="Ex.: Pastilha de Freio Dianteira"></label><label>Preço da peça (R$)<input id="tgPreco" type="number" min="0" placeholder="Opcional"></label><label>Nível da peça<select id="tgNivel"><option value="">Automático (preço ou moto)</option>${opt(CFG.pecas.map((p) => [p.id, p.label]))}</select></label><label>Motos<select id="tgEscopo"><option value="filtradas">Filtradas no catálogo</option><option value="estrelas">Só com ★ (A, B, C)</option><option value="todas">Todas</option></select></label><label class="check-filter"><input id="tgCompat" type="checkbox" checked> Filtrar faixa de valor da moto</label></div>
 <div class="table-meta"><span id="tgInfo"></span><div class="table-meta-actions"><button class="subtle-btn" id="tgCopyAll">Copiar todos</button><button class="subtle-btn" id="tgCsv">↧ Baixar CSV</button></div></div>
 <div class="table-wrap"><table class="tg-table"><thead><tr><th>Moto</th><th>Faixa</th><th>★</th><th>Título sugerido</th><th>Letras</th><th></th></tr></thead><tbody id="tgBody"></tbody></table></div></div>
-<div class="workspace-card tg-card" style="margin-top:16px"><div class="module-heading"><div><span class="eyebrow">REGRA</span><h2>Moto × peça</h2><p>Edite faixas e níveis em perfil-data.js.</p></div></div><div class="table-wrap"><table class="tg-table"><thead><tr><th>Faixa da moto</th><th>Valor de referência</th><th>Peça indicada</th><th>Adjetivos no título</th></tr></thead><tbody>${CFG.faixas.map((f) => `<tr><td><span class="faixa-badge" style="--c:${f.cor}">${esc(f.label)}</span></td><td>${esc(f.faixa)}</td><td>${CFG.pecas.filter((p) => p.faixas.includes(f.id)).map((p) => esc(p.label)).join(' ou ')}</td><td>${f.adj.map(esc).join(', ')}</td></tr>`).join('')}</tbody></table></div></div></section>`);
+<div class="workspace-card tg-card" style="margin-top:16px"><div class="module-heading"><div><span class="eyebrow">REGRA</span><h2>Moto × peça</h2><p>As faixas orientam o posicionamento comercial. A aplicação da peça precisa ser confirmada.</p></div></div><div class="table-wrap"><table class="tg-table"><thead><tr><th>Faixa da moto</th><th>Valor de referência</th><th>Peça indicada</th><th>Adjetivos no título</th></tr></thead><tbody>${CFG.faixas.map((f) => `<tr><td><span class="faixa-badge" style="--c:${f.cor}">${esc(f.label)}</span></td><td>${esc(f.faixa)}</td><td>${CFG.pecas.filter((p) => p.faixas.includes(f.id)).map((p) => esc(p.label)).join(' ou ')}</td><td>${f.adj.map(esc).join(', ')}</td></tr>`).join('')}</tbody></table></div></div></section>`);
     ['#tgPeca', '#tgPreco', '#tgNivel', '#tgEscopo', '#tgCompat'].forEach((s) => $(s).addEventListener('input', renderTitulos));
     $('#tgBody').addEventListener('click', async (e) => { const b = e.target.closest('.tg-copy'); if (!b) return; const row = renderTitulos.last[Number(b.dataset.i)]; try { await navigator.clipboard.writeText(row.t); toast('Título copiado'); } catch (err) { toast('Não foi possível copiar'); } });
-    $('#tgCopyAll').addEventListener('click', async () => { const t = (renderTitulos.last || []).map((x) => x.t).filter(Boolean).join('\n'); if (!t) return toast('Nada para copiar'); try { await navigator.clipboard.writeText(t); toast('Títulos copiados'); } catch (err) { toast('Não foi possível copiar'); } });
-    $('#tgCsv').addEventListener('click', () => { const rows = (renderTitulos.last || []).filter((x) => x.t); if (!rows.length) return toast('Nada para exportar'); const csv = '\uFEFF' + [['Marca', 'Modelo', 'Faixa', 'Estrela', 'Título'], ...rows.map(({ r, t }) => [r.marca, r.modelo, faixaById[get(r).faixa].label, get(r).estrela, t])].map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'master-motos-titulos.csv'; a.click(); URL.revokeObjectURL(a.href); });
+    $('#tgCopyAll').addEventListener('click', async () => { const t = (renderTitulos.last || []).map((x) => x.t).filter(t => t && t.length <= CFG.limiteTitulo).join('\n'); if (!t) return toast('Nada para copiar'); try { await navigator.clipboard.writeText(t); toast('Títulos copiados'); } catch (err) { toast('Não foi possível copiar'); } });
+    $('#tgCsv').addEventListener('click', () => { const rows = (renderTitulos.last || []).filter((x) => x.t && x.t.length <= CFG.limiteTitulo); if (!rows.length) return toast('Nada para exportar'); const csv = '\uFEFF' + [['Marca', 'Modelo', 'Faixa', 'Estrela', 'Título'], ...rows.map(({ r, t }) => [r.marca, r.modelo, faixaById[get(r).faixa].label, get(r).estrela, t])].map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'master-motos-titulos.csv'; a.click(); URL.revokeObjectURL(a.href); });
     const paramsNav = $('[data-view="titulos"]');
-    if (paramsNav) paramsNav.innerHTML = '<span class="nav-icon">☷</span> Parâmetros para títulos';
+    if (paramsNav) paramsNav.innerHTML = '<span class="nav-icon">✎</span> Gerador de títulos';
     const paramsView = $('#titulosView');
     if (paramsView) {
       const heading = paramsView.querySelector('h1');
       const lede = paramsView.querySelector('.lede');
-      if (heading) heading.textContent = 'Parâmetros para títulos';
-      if (lede) lede.textContent = 'Consulte os parâmetros da moto e da peça para montar seus títulos manualmente.';
+      if (heading) heading.textContent = 'Gerador de títulos';
+      if (lede) lede.textContent = 'Gere títulos com peça, modelo e anos cadastrados. Priorize a curva do mercado e confirme a compatibilidade antes de publicar.';
+      $('#tgEscopo').insertAdjacentHTML('beforeend', '<option value="mercadoA">Curva A do mercado</option><option value="mercado">Ranking de mercado</option>');
       paramsView.insertAdjacentHTML('afterbegin', '<div class="workspace-card curve-card" style="margin-bottom:16px"><div class="module-heading"><div><span class="eyebrow">CLASSIFICAÇÃO DE CURVA</span><h2>Parâmetros de curva</h2><p>Use a curva da moto como referência na montagem do título.</p></div></div><div class="rank-list"><div class="rank-row"><span class="rank-no">A</span><span class="rank-name"><strong>CURVA A</strong><small style="color:var(--muted)">Maior prioridade comercial</small></span></div><div class="rank-row"><span class="rank-no">B</span><span class="rank-name"><strong>CURVA B</strong><small style="color:var(--muted)">Prioridade comercial intermediária</small></span></div><div class="rank-row"><span class="rank-no">C</span><span class="rank-name"><strong>CURVA C</strong><small style="color:var(--muted)">Prioridade comercial básica</small></span></div></div></div>');
     }
     $('.nav').addEventListener('click', event => { const b = event.target.closest('[data-view]'); if (b) showView(b.dataset.view); });
   }
 
-  return { exportData() { return JSON.parse(JSON.stringify(over)); }, replaceData(data) { over = JSON.parse(JSON.stringify(data)); }, saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { over = {}; persist(); }, remove(ids) { ids.forEach(id => delete over[id]); persist(); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
+  return { refreshTitles: renderTitulos, exportData() { return JSON.parse(JSON.stringify(over)); }, replaceData(data) { over = JSON.parse(JSON.stringify(data)); }, saveForm(id) { set(id, { perfil: $('#fPerfil').value, faixa: $('#fFaixa').value, valor: $('#fValor').value, estrela: $('#fEstrela').value }); }, reset() { over = {}; persist(); }, remove(ids) { ids.forEach(id => delete over[id]); persist(); }, init, cells, match, get, summaryItems, estrelaLabel, render() { renderDash(); }, faixaLabel: (r) => faixaById[get(r).faixa].label, estrela: (r) => get(r).estrela };
 })();

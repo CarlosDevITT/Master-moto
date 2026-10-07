@@ -59,7 +59,7 @@
       selectedScenario: 'tax23', collapsed: false
     });
     return {
-      schemaVersion: 1,
+      schemaVersion: 1, ui: {},
       settings: { fixedPct: 12, premiumPct: 17, classicPct: 12, commerce6Pct: 12, commerce3Pct: 6, storePct: -2, taxPct: 23, marginPct: 0, rounding: 'cent' },
       knownPrice: 269.9,
       fees: [{ id: 'fee12', name: 'Comissão Clássico 17/12', pct: 12 }, { id: 'fee17', name: 'Comissão Premium 17/12', pct: 17 }, { id: 'fee11', name: 'Comissão Clássico 14/11', pct: 11 }, { id: 'fee14', name: 'Comissão Premium 14/11', pct: 14 }],
@@ -104,7 +104,15 @@
       if (!object(fee) || !identifier(fee.id) || feeIds.has(fee.id) || !label(fee.name) || !number(fee.pct, 0, 100)) fail();
       feeIds.add(fee.id); return { id: fee.id, name: fee.name, pct: fee.pct };
     });
-    return clone({ schemaVersion: 1, settings, categories, fees, knownPrice: data.knownPrice });
+    const ui = {};
+    if (data.ui != null) {
+      if (!object(data.ui) || Object.keys(data.ui).length > 405) fail();
+      for (const [key, value] of Object.entries(data.ui)) {
+        if (!/^(settings|fees|method|tools|[a-zA-Z0-9-]{1,80}:(costs|channels|scenarios|breakdown-(premium|classic|commerce6|commerce3|store)))$/.test(key) || typeof value !== 'boolean') fail();
+        ui[key] = value;
+      }
+    }
+    return clone({ schemaVersion: 1, settings, categories, fees, knownPrice: data.knownPrice, ui });
   }
   const api = { channels, parseNumber, calculate, defaults, validate };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
