@@ -1,6 +1,6 @@
 /* Login and account lifecycle. Application scripts load only after account hydration. */
 window.MMAccount = (() => {
-  const scripts=['shared.js','data.js','guide-data.js','perfil-data.js','perfil.js','app.js','pricing-engine.js','pricing.js','market-engine.js','market.js','brands.js','catalog-tools.js','catalog-abc.js','accessibility.js','orders.js'];
+  const scripts=['shared.js','data.js','guide-data.js','perfil-data.js','perfil.js','app.js','pricing-engine.js','pricing.js','market-engine.js','market.js','brands.js','catalog-tools.js','catalog-abc.js','accessibility.js'];
   const loadScript = file => new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='js/'+file;script.onload=resolve;script.onerror=()=>reject(Error('Não foi possível carregar o aplicativo.'));document.body.append(script);});
   async function loadApp(){ for(const file of scripts) await loadScript(file); }
   async function init(config, dependencies={}) {
@@ -61,6 +61,8 @@ window.MMAccount = (() => {
         sync=MMCloudEngine.createSync({store,remote,onStatus:cloudStatus});await sync.initialize();
         if(changedAccount)throw Error('A conta mudou durante o carregamento.');
         window.MMStorage=store; appStarted=true; await appLoader(); if(changedAccount)throw Error('A conta mudou durante o carregamento.'); loaded=true;
+        // Pedidos é opcional: falhas no módulo não podem bloquear o login.
+        loadScript('orders.js').catch(error => console.error('Módulo Pedidos indisponível:', error));
         const data=window.MMCatalogTools.snapshot();
         const defaults={'master-motos-records-v1':data.records,'master-motos-notes-v1':data.notes,'master-motos-perfil-v1':data.profiles,'mm_guia_notes_v1':data.guide,'master-motos-pricing-v1':data.pricing,'master-motos-brands-v1':data.brands,'mm-catalog-preferences-v1':data.preferences,'mm-catalog-favorites-v1':data.favorites,'mm_theme_v1':data.theme};
         for(const [key,value] of Object.entries(defaults))if(store.getItem(key)===null)store.setItem(key,key==='mm_theme_v1'?value:JSON.stringify(value));
