@@ -77,12 +77,23 @@
     let cached=null;try{cached=JSON.parse(local.getItem(DRAFT_KEY)||'null');if(!cached||!Array.isArray(cached.items)||cached.items.length>500)cached=null;}catch{cached=null;}
     const o=existing||(cached||{supplierId:db.suppliers[0]?.id||'',notes:'',items:[{sku:'',description:'',application:'',qty:1,received:0,price:null}]});
     let items=o.items.map(i=>({...i,obs:i.obs??i.application??''}));
-    const row=(i,n)=>'<div class="mm-order-item" data-index="'+n+'"><div class="mm-order-item-top"><strong>Peça '+(n+1)+'</strong><button type="button" data-remove="'+n+'" aria-label="Remover peça '+(n+1)+'">Remover</button></div><div class="mm-order-fields"><label>SKU<input data-field="sku" maxlength="100" autocomplete="off" placeholder="Código da peça" required value="'+esc(i.sku)+'"></label><label>Quantidade<input data-field="qty" type="number" inputmode="numeric" min="1" step="1" required value="'+esc(i.qty)+'"></label><label>OBS<input data-field="obs" maxlength="300" placeholder="Opcional" value="'+esc(i.obs||'')+'"></label></div></div>';
+    const row=(i,n)=>'<div class="mm-order-item" data-index="'+n+'"><div class="mm-order-item-top"><strong>Peça '+(n+1)+'</strong><button type="button" data-remove="'+n+'" aria-label="Remover peça '+(n+1)+'">Remover</button></div><div class="mm-order-fields"><label>SKU<input data-field="sku" maxlength="100" autocomplete="off" placeholder="Código da peça" required value="'+esc(i.sku)+'"><small class="mm-bling-match" data-match="'+n+'" aria-live="polite"></small></label><label>Quantidade<input data-field="qty" type="number" inputmode="numeric" min="1" step="1" required value="'+esc(i.qty)+'"></label><label>OBS<input data-field="obs" maxlength="300" placeholder="Opcional" value="'+esc(i.obs||'')+'"></label></div></div>';
     body().innerHTML='<div class="mm-orders-panel mm-order-editor"><div class="mm-orders-head"><div><p class="eyebrow">AMERICAN CROSS · COMPRAS</p><h2>'+(existing?'Editar pedido':'Novo pedido')+'</h2></div><button type="button" class="subtle-btn" id="ordBack">Voltar</button></div><form id="ordForm"><label class="mm-order-supplier">Fornecedor<select id="ordSupplier" required>'+supplierOptions(o.supplierId)+'</select></label><div class="mm-order-items-heading"><h3>Peças do pedido</h3><span id="ordItemCount">'+items.length+' peça(s)</span></div><div id="ordItems"></div><button type="button" class="mm-add-part" id="ordAdd">+ Adicionar outra peça</button><div class="mm-order-editor-foot"><button type="submit" class="primary-btn">Salvar pedido</button></div></form></div>';
-    const capture=()=>{body().querySelectorAll('#ordItems .mm-order-item').forEach(el=>{const i=items[Number(el.dataset.index)];el.querySelectorAll('[data-field]').forEach(input=>i[input.dataset.field]=input.value);});};
+    const capture=()=>{body().querySelectorAll('#ordItems .mm-order-item').forEach(el=>{const i=items[Number(el.dataset.index)];el.querySelectorAll('[data-field]').forEach(input=>i[input.dataset.field]=input.value);const match=window.MMBlingCatalog?.findSku(i.sku);if(match)i.description=match.name;});};
     const draw=()=>{$('#ordItems').innerHTML=items.map(row).join('');$('#ordItemCount').textContent=items.length+' peça(s)';};
     draw();$('#ordBack').onclick=render;
     let draftTimer;const persistDraft=()=>{if(existing)return;capture();try{local.setItem(DRAFT_KEY,JSON.stringify({supplierId:$('#ordSupplier').value,items}));}catch(e){console.warn('Não foi possível salvar rascunho temporário',e);}};
+    const lookupSku=input=>{
+      if(input?.dataset.field!=='sku')return;
+      const item=input.closest('.mm-order-item'),idx=Number(item?.dataset.index),hint=item?.querySelector('.mm-bling-match');
+      if(!hint||!items[idx])return;
+      const product=window.MMBlingCatalog?.findSku(input.value);
+      hint.textContent=product?'Bling: '+product.name:'';
+      if(product)items[idx].description=product.name;
+    };
+    $('#ordItems').addEventListener('input',e=>{if(e.target.matches('[data-field="sku"]'))lookupSku(e.target);});
+    $('#ordItems').addEventListener('change',e=>{if(e.target.matches('[data-field="sku"]'))lookupSku(e.target);});
+    $('#ordItems').querySelectorAll('[data-field="sku"]').forEach(lookupSku);
     $('#ordForm').addEventListener('input',()=>{clearTimeout(draftTimer);draftTimer=setTimeout(persistDraft,350);});
     $('#ordForm').addEventListener('change',()=>{clearTimeout(draftTimer);persistDraft();});
     $('#ordAdd').onclick=()=>{capture();if(items.length>=500)return notify('Limite de 500 peças','warning');items.push({sku:'',qty:1,obs:'',description:'',application:'',received:0,price:null});draw();persistDraft();const last=$('#ordItems .mm-order-item:last-child');last?.scrollIntoView({behavior:'smooth',block:'center'});last?.querySelector('[data-field="sku"]')?.focus({preventScroll:true});};
