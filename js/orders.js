@@ -34,12 +34,14 @@
     XLSX.writeFile(book,o.number+'.xlsx',{compression:true});
   };
   const shareOrder=async o=>{
-    const rows=[['SKU','QUANTIDADE','OBS'],...o.items.map(i=>[i.sku,i.qty,i.obs??i.application??''])];
-    const content='\\uFEFF'+rows.map(r=>r.map(csvCell).join(';')).join('\\r\\n');
-    const file=new File([content],o.number+'.csv',{type:'text/csv;charset=utf-8'});
     try{
-      if(navigator.canShare?.({files:[file]})&&navigator.share){
-        await navigator.share({title:'Pedido '+o.number,text:message(o),files:[file]});return;
+      if(window.XLSX&&navigator.share){
+        const rows=[['AMERICAN CROSS · PEDIDO'],['Pedido',o.number],['Fornecedor',o.supplierName],[],['SKU','QUANTIDADE','OBS'],...o.items.map(i=>[String(i.sku),Number(i.qty),String(i.obs??i.application??'')])];
+        const sheet=XLSX.utils.aoa_to_sheet(rows);sheet['!cols']=[{wch:30},{wch:16},{wch:55}];
+        const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Pedido');
+        const bytes=XLSX.write(book,{bookType:'xlsx',type:'array'});
+        const file=new File([bytes],o.number+'.xlsx',{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        if(navigator.canShare?.({files:[file]})){await navigator.share({title:'Pedido '+o.number,files:[file]});return;}
       }
       if(navigator.share){await navigator.share({title:'Pedido '+o.number,text:message(o)});return;}
       whatsapp(o);
