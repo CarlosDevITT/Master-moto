@@ -1,7 +1,8 @@
 /* Master Motos — Pedidos: fase local, sem tabelas Supabase. */
 (() => {
   'use strict';
-  const KEY='mm-orders-local-v1';
+  const KEY=(window.MMStorage?.prefix || 'mm-orders-unscoped:')+'orders-v1';
+  const local=window.localStorage;
   const SEED=['Danidrea','ATHENA / VEDAMOTORS','PROX','ORIGINAL KAWASAKI'];
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,9 +10,9 @@
   const date=()=>new Date().toISOString();
   const defaults=()=>({version:1,suppliers:SEED.map(name=>({id:uid(),name,phone:''})),orders:[]});
   let db;
-  try { const raw=MMStorage.getItem(KEY);db=raw?JSON.parse(raw):defaults();if(!Array.isArray(db.orders)||!Array.isArray(db.suppliers))throw Error(); }
+  try { const raw=local.getItem(KEY);db=raw?JSON.parse(raw):defaults();if(!Array.isArray(db.orders)||!Array.isArray(db.suppliers))throw Error(); }
   catch {db=defaults();alert('Não foi possível ler os pedidos locais. Nenhum dado existente foi substituído.');return;}
-  const save=()=>{try{MMStorage.setItem(KEY,JSON.stringify(db));return true;}catch{alert('Falha ao salvar pedidos neste navegador. Libere espaço ou exporte seus dados.');return false;}};
+  const save=()=>{try{local.setItem(KEY,JSON.stringify(db));return true;}catch{alert('Falha ao salvar pedidos neste navegador. Libere espaço ou exporte seus dados.');return false;}};
   const event=(order,type,detail='')=>{order.events??=[];order.events.push({at:date(),type,detail});};
   const statuses={draft:'Rascunho',confirmed:'Confirmado',sent:'Enviado',partially_received:'Recebido parcialmente',received:'Recebido',cancelled:'Cancelado'};
   const supplier=id=>db.suppliers.find(s=>s.id===id);
@@ -26,7 +27,7 @@
   view.innerHTML='<div class="mm-orders-head"><div><p class="eyebrow">MASTER MOTOS · COMPRAS</p><h1>Pedidos de peças</h1><p>Organize fornecedores, monte pedidos, compartilhe e acompanhe recebimentos.</p></div><div class="mm-orders-actions"><button class="subtle-btn" id="ordBackup">Exportar backup</button><button class="subtle-btn" id="ordSuppliers">Fornecedores</button><button class="primary-btn" id="ordNew">+ Novo pedido</button></div></div><div id="ordBody"></div>';
   $('#mainContent').append(view);
   const nav=document.createElement('button');nav.className='nav-item';nav.dataset.view='pedidos';nav.innerHTML='<span class="nav-icon">▤</span> Pedidos';$('#sidebarNav').append(nav);
-  nav.addEventListener('click',()=>{view.classList.remove('hidden');$('#pageTitle').textContent='Pedidos de peças';render();});
+  nav.addEventListener('click',event=>{event.stopPropagation();document.querySelectorAll('.main > .content').forEach(section=>section.classList.toggle('hidden',section!==view));document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item===nav));view.classList.remove('hidden');$('#pageTitle').textContent='Pedidos de peças';render();});
   document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="css/orders.css">');
   const body=()=>$('#ordBody');
   const buttons=(o)=>'<div class="mm-order-buttons"><button data-act="open" data-id="'+esc(o.id)+'">Abrir</button><button data-act="csv" data-id="'+esc(o.id)+'">Excel/CSV</button><button data-act="pdf" data-id="'+esc(o.id)+'">Imprimir/PDF</button><button data-act="wa" data-id="'+esc(o.id)+'">WhatsApp</button></div>';
