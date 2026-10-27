@@ -57,3 +57,25 @@
  .mm-orders #ordSupplierForm{display:grid;grid-template-columns:1fr}
  .mm-orders #ordSupplierForm input,.mm-orders #ordSupplierForm button{width:100%}
 }
+
+/* Formulário compacto de pedidos — 3 campos, mobile */
+.mm-orders .mm-order-editor{max-width:920px;margin:0 auto;padding:22px;border:1px solid var(--line);border-radius:20px}
+.mm-orders .mm-order-editor .mm-orders-head{margin-bottom:22px}
+.mm-orders .mm-order-editor .eyebrow{font-size:10px;letter-spacing:.16em;color:#e11b32;font-weight:800}
+.mm-orders .mm-order-editor h2{font-size:clamp(22px,4vw,30px);margin:4px 0}
+.mm-orders .mm-order-supplier{display:block;font-size:13px;letter-spacing:.02em}
+.mm-orders .mm-order-supplier select{display:block;width:100%;margin-top:9px;min-height:52px;font-size:16px;font-weight:650;border:1px solid var(--line);border-radius:12px;padding:12px}
+.mm-orders .mm-order-items-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 0 8px}
+.mm-orders .mm-order-items-heading h3{margin:0;font-size:16px}
+.mm-orders #ordItemCount{font-size:12px;color:var(--muted);white-space:nowrap}
+.mm-orders .mm-order-editor .mm-order-item{display:block;background:var(--bg);border:1px solid var(--line);border-radius:14px;margin:10px 0;padding:14px}
+.mm-orders .mm-order-item-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.mm-orders .mm-order-item-top strong{font-size:13px}
+.mm-orders .mm-order-editor .mm-order-item-top button[data-remove]{grid-column:auto;width:auto;height:auto;min-height:32px;padding:5px 11px;font-size:12px}
+.mm-orders .mm-order-editor .mm-order-fields{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(90px,.7fr) minmax(0,1.5fr);gap:10px;align-items:end}
+.mm-orders .mm-order-editor .mm-order-fields label{display:block;min-width:0;font-size:12px}
+.mm-orders .mm-order-editor .mm-order-fields input{display:block;width:100%;margin-top:6px;min-height:47px;font-size:16px;border-radius:10px}
+.mm-orders .mm-add-part{width:100%;min-height:48px;margin:9px 0 16px;background:rgba(238,20,45,.06)!important;border:1px dashed #e7354c!important;color:#d71936!important;font-weight:800!important;border-radius:12px!important}
+.mm-orders .mm-order-editor-foot{position:sticky;bottom:0;z-index:2;padding:12px 0 4px;background:var(--surface);border-top:1px solid var(--line)}
+.mm-orders .mm-order-editor-foot .primary-btn{width:100%;min-height:51px;font-size:15px}
+@media(max-width:700px){.mm-orders .mm-order-editor{padding:14px;border-radius:15px}.mm-orders .mm-order-editor .mm-order-fields{grid-template-columns:minmax(0,1.3fr) 96px;gap:9px}.mm-orders .mm-order-editor .mm-order-fields label:nth-child(3){grid-column:1/-1}.mm-orders .mm-order-editor .mm-order-item{padding:12px}.mm-orders .mm-order-editor-foot{bottom:0;padding-bottom:env(safe-area-inset-bottom,4px)}}
