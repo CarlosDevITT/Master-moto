@@ -63,6 +63,7 @@ window.MMAccount = (() => {
         window.MMStorage=store; appStarted=true; await appLoader(); if(changedAccount)throw Error('A conta mudou durante o carregamento.'); loaded=true;
         // Pedidos é opcional: falhas no módulo não podem bloquear o login.
         loadScript('orders.js').catch(error => console.error('Módulo Pedidos indisponível:', error));
+        loadScript('bling.js').catch(error => console.error('Central Bling indisponível:', error));
         const data=window.MMCatalogTools.snapshot();
         const defaults={'master-motos-records-v1':data.records,'master-motos-notes-v1':data.notes,'master-motos-perfil-v1':data.profiles,'mm_guia_notes_v1':data.guide,'master-motos-pricing-v1':data.pricing,'master-motos-brands-v1':data.brands,'mm-catalog-preferences-v1':data.preferences,'mm-catalog-favorites-v1':data.favorites,'mm_theme_v1':data.theme};
         for(const [key,value] of Object.entries(defaults))if(store.getItem(key)===null)store.setItem(key,key==='mm_theme_v1'?value:JSON.stringify(value));
