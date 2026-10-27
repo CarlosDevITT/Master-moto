@@ -79,3 +79,23 @@
 .mm-orders .mm-order-editor-foot{position:sticky;bottom:0;z-index:2;padding:12px 0 4px;background:var(--surface);border-top:1px solid var(--line)}
 .mm-orders .mm-order-editor-foot .primary-btn{width:100%;min-height:51px;font-size:15px}
 @media(max-width:700px){.mm-orders .mm-order-editor{padding:14px;border-radius:15px}.mm-orders .mm-order-editor .mm-order-fields{grid-template-columns:minmax(0,1.3fr) 96px;gap:9px}.mm-orders .mm-order-editor .mm-order-fields label:nth-child(3){grid-column:1/-1}.mm-orders .mm-order-editor .mm-order-item{padding:12px}.mm-orders .mm-order-editor-foot{bottom:0;padding-bottom:env(safe-area-inset-bottom,4px)}}
+
+/* Pedidos 2.0 — dashboard mobile */
+.mm-orders .mm-orders-dashboard{margin:16px 0 22px}
+.mm-orders .mm-orders-dashboard .mm-orders-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.mm-orders .mm-order-stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 7px 22px rgba(0,0,0,.04)}
+.mm-orders .mm-order-stat span{font-size:12px;color:var(--muted);line-height:1.35}
+.mm-orders .mm-order-stat strong{font-size:32px;line-height:1;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.mm-orders .mm-orders-quick{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.mm-orders .mm-orders-quick button{padding:13px 17px;border-radius:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);font-weight:750}
+.mm-orders .mm-orders-quick button:first-child{background:#e71935;color:white;border-color:#e71935}
+.mm-orders .mm-orders-results{margin-top:24px}
+.mm-orders .mm-orders-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.mm-orders .mm-orders-section-heading h2{margin:0;font-size:22px;letter-spacing:-.03em}
+.mm-orders .mm-orders-section-heading span{font-size:12px;color:var(--muted)}
+.mm-orders .mm-order-card-title{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.mm-orders .mm-order-card-title .mm-order-status{margin:0}
+.mm-orders .mm-order-card-info small{display:block;margin-top:7px;color:var(--muted)}
+.mm-orders .mm-orders-empty strong{display:block;font-size:15px;margin-bottom:5px}
+.mm-orders .mm-orders-empty p{margin:0}
+@media(max-width:800px){.mm-orders .mm-orders-dashboard .mm-orders-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.mm-orders .mm-order-stat{padding:15px}.mm-orders .mm-order-stat strong{font-size:27px}.mm-orders .mm-orders-quick{display:grid;grid-template-columns:1fr 1fr}.mm-orders .mm-orders-quick button{padding:12px 7px;font-size:12px}}
