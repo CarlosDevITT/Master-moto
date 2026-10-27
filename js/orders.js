@@ -28,7 +28,7 @@
   const message=o=>['*PEDIDO DE PEÇAS — MASTER MOTOS*','Pedido: '+o.number,'Fornecedor: '+(supplier(o.supplierId)?.name||o.supplierName),'',...o.items.map((i,n)=>(n+1)+'. '+i.sku+' — '+i.description+' — '+i.qty+' un.'+(i.application?' | '+i.application:'')),...(o.notes?['','Observações: '+o.notes]:[]),'','Favor confirmar disponibilidade e prazo.'].join('\n');
   const log=o=>(o.events||[]).slice().reverse().map(e=>'<li>'+esc(new Date(e.at).toLocaleString('pt-BR'))+' — '+esc(e.type)+(e.detail?' — '+esc(e.detail):'')+'</li>').join('');
   const view=document.createElement('section');view.id='ordersView';view.className='content hidden mm-orders';
-  view.innerHTML='<div class="mm-orders-head"><div><p class="eyebrow">MASTER MOTOS · COMPRAS</p><h1>Pedidos de peças</h1><p>Organize fornecedores, monte pedidos, compartilhe e acompanhe recebimentos.</p></div><div class="mm-orders-actions"><button class="subtle-btn" id="ordBackup">Exportar backup</button><button class="subtle-btn" id="ordSuppliers">Fornecedores</button><button class="primary-btn" id="ordNew">+ Novo pedido</button></div></div><div id="ordBody"></div>';
+  view.innerHTML='<div class="mm-orders-head"><div><p class="eyebrow">MASTER MOTOS · COMPRAS</p><h1>Pedidos de peças</h1><p>Organize fornecedores, monte pedidos, compartilhe e acompanhe recebimentos.</p></div><div class="mm-orders-actions"><button class="subtle-btn" id="ordBackup">Exportar backup</button><button class="subtle-btn" id="ordRestore">Restaurar backup</button><input type="file" id="ordRestoreFile" accept=".json,application/json" hidden><button class="subtle-btn" id="ordSuppliers">Fornecedores</button><button class="primary-btn" id="ordNew">+ Novo pedido</button></div></div><div id="ordBody"></div>';
   $('#mainContent').append(view);
   const nav=document.createElement('button');nav.className='nav-item';nav.dataset.view='pedidos';nav.innerHTML='<span class="nav-icon">▤</span> Pedidos';$('#sidebarNav').append(nav);
   nav.addEventListener('click',event=>{event.stopPropagation();document.querySelectorAll('.main > .content').forEach(section=>section.classList.toggle('hidden',section!==view));document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item===nav));view.classList.remove('hidden');$('#pageTitle').textContent='Pedidos de peças';render();});
@@ -106,5 +106,26 @@
   $('#ordNew').onclick=()=>{if(!db.suppliers.length)return suppliers();edit();};
   $('#ordSuppliers').onclick=suppliers;
   $('#ordBackup').onclick=()=>download('master-motos-pedidos-backup.json',JSON.stringify(db,null,2),'application/json;charset=utf-8');
+  const validateBackup=data=>{
+    if(!data||data.version!==1||!Array.isArray(data.suppliers)||!Array.isArray(data.orders)||data.suppliers.length>2000||data.orders.length>20000)throw Error('Formato de backup incompatível');
+    const supplierIds=new Set();
+    for(const x of data.suppliers){if(!x||typeof x.id!=='string'||typeof x.name!=='string'||!x.name.trim()||x.name.length>150||supplierIds.has(x.id))throw Error('Fornecedor inválido ou duplicado');supplierIds.add(x.id);}
+    const orderIds=new Set();
+    for(const o of data.orders){if(!o||typeof o.id!=='string'||typeof o.number!=='string'||!supplierIds.has(o.supplierId)||!statuses[o.status]||orderIds.has(o.id)||!Array.isArray(o.items)||!o.items.length||o.items.length>500||!Array.isArray(o.events||[]))throw Error('Pedido inválido no arquivo');orderIds.add(o.id);
+      for(const i of o.items){if(!i||typeof i.sku!=='string'||!i.sku.trim()||i.sku.length>100||!validQty(i.qty)||!Number.isSafeInteger(Number(i.received))||Number(i.received)<0||Number(i.received)>Number(i.qty))throw Error('Item inválido no arquivo');}
+    }
+    return data;
+  };
+  $('#ordRestore').onclick=()=>$('#ordRestoreFile').click();
+  $('#ordRestoreFile').onchange=async e=>{
+    const file=e.target.files?.[0];e.target.value='';if(!file)return;
+    if(file.size>15*1024*1024)return notify('Backup muito grande (máximo 15 MB)','warning');
+    try{
+      const incoming=validateBackup(JSON.parse(await file.text()));
+      if(!await ask('Restaurar backup?','Os dados atuais serão substituídos. Exporte seu backup atual antes de continuar.'))return;
+      const previous=db;db=incoming;if(!save()){db=previous;return;}notify('Backup restaurado');render();
+    }catch(error){console.error('Falha ao restaurar backup',error);notify('Arquivo de backup inválido','error');}
+  };
+
   body().addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const o=db.orders.find(x=>x.id===b.dataset.id);if(!o)return;switch(b.dataset.act){case 'open':details(o.id);break;case 'duplicate':duplicate(o.id);break;case 'csv':download(o.number+'.csv',csv(o));break;case 'pdf':printOrder(o);break;case 'wa':whatsapp(o);break;}});
 })();
