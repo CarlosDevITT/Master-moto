@@ -99,3 +99,6 @@
 .mm-orders .mm-orders-empty strong{display:block;font-size:15px;margin-bottom:5px}
 .mm-orders .mm-orders-empty p{margin:0}
 @media(max-width:800px){.mm-orders .mm-orders-dashboard .mm-orders-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.mm-orders .mm-order-stat{padding:15px}.mm-orders .mm-order-stat strong{font-size:27px}.mm-orders .mm-orders-quick{display:grid;grid-template-columns:1fr 1fr}.mm-orders .mm-orders-quick button{padding:12px 7px;font-size:12px}}
+
+/* Referência cruzada com catálogo importado do Bling */
+.mm-orders .mm-bling-match{display:block;font-size:11px;line-height:1.35;color:#159d72;margin-top:5px;overflow-wrap:anywhere;min-height:0}
