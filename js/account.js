@@ -103,7 +103,7 @@ window.MMAccount = (() => {
       try{const result=await client.auth.getSession();if(result.error)throw result.error;if(!result.data.session){setMode('login');return;}if(recovery){setMode('recovery');return;}await mount(result.data.session);}
       catch{message('Não foi possível carregar sua conta. Confira a conexão e tente novamente.');q('accountRetry').hidden=false;}
     }
-    if(config?.enabled===false){await appLoader();gate.hidden=true;document.body.classList.remove('auth-blocked');loadScript('orders.js').catch(error=>console.error('Módulo Pedidos indisponível:',error));return {local:true};}
+    if(config?.enabled===false){await appLoader();gate.hidden=true;document.body.classList.remove('auth-blocked');loadScript('orders.js').catch(error=>console.error('Módulo Pedidos indisponível:',error));loadScript('bling.js').catch(error=>console.error('Central Bling indisponível:',error));return {local:true};}
     if(!config?.url?.match(/^https:\/\/[a-z0-9]+\.supabase\.co$/)||!config?.publishableKey?.startsWith('sb_publishable_')){message('A conexão da conta ainda não foi configurada.');q('accountSubmit').disabled=true;return {configured:false};}
     const factory=dependencies.createClient || SupabaseSDK.createClient;
     client=factory(config.url,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'},global:{fetch:(input,options={})=>fetch(input,{...options,signal:options.signal||AbortSignal.timeout(20000)})}});
