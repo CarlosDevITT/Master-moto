@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="css/catalog-tools.css">
   <link rel="stylesheet" href="css/pricing.css"><link rel="stylesheet" href="css/market.css"><link rel="stylesheet" href="css/account.css"><link rel="stylesheet" href="css/upgrade.css">
   <link rel="stylesheet" href="css/brands.css">
+  <link rel="stylesheet" href="css/mobile-nav.css">
 </head>
 <body class="auth-blocked">
   <a class="skip-link" href="#mainContent">Ir para o conteúdo</a>
@@ -46,11 +47,22 @@
       <section class="content hidden" id="notesView"><div class="hero-row"><div><p class="eyebrow">MEMÓRIA DA OPERAÇÃO</p><h1>Notas e avisos</h1><p class="lede">Registre limites de ano, compatibilidades e cuidados importantes por moto.</p></div><button class="primary-btn" id="newNote">+ Nova nota</button></div><div class="notes-toolbar"><label class="search"><span>⌕</span><input id="notesSearch" type="search" placeholder="Buscar nas notas..." autocomplete="off"></label><div class="note-legend"><span><i class="note-dot warning"></i>Aviso</span><span><i class="note-dot info"></i>Aplicação</span><span><i class="note-dot neutral"></i>Compatibilidade</span></div></div><div id="notesGrid" class="notes-grid"></div></section>
     </main>
   </div>
+  <div id="mmMobileBackdrop" class="mm-mobile-backdrop" hidden></div>
+  <section id="mmMobileSheet" class="mm-mobile-sheet" role="dialog" aria-modal="true" aria-label="Navegação" aria-hidden="true" inert>
+    <div class="mm-mobile-sheet-head"><div><small>MASTER MOTOS</small><h2 id="mmMobileSheetTitle">Módulos</h2></div><button type="button" id="mmMobileClose" aria-label="Fechar menu">×</button></div>
+    <div id="mmMobileLinks" class="mm-mobile-links"></div>
+  </section>
+  <nav class="mm-mobile-dock" aria-label="Navegação mobile">
+    <button type="button" id="mmMobileHome" aria-label="Ir para Home"><span class="mm-dock-icon">⌂</span><span>Home</span></button>
+    <button type="button" id="mmMobileModules" class="mm-mobile-plus" aria-label="Abrir módulos" aria-expanded="false" aria-controls="mmMobileSheet"><span>+</span><small>Módulos</small></button>
+    <button type="button" id="mmMobileSettings" aria-label="Abrir configurações" aria-expanded="false" aria-controls="mmMobileSheet"><span class="mm-dock-icon">⚙</span><span>Config.</span></button>
+  </nav>
   <div class="modal-backdrop hidden" id="modalBackdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><p class="eyebrow" id="modalEyebrow">NOVO REGISTRO</p><h2 id="modalTitle">Adicionar moto</h2></div><button class="close-btn" id="closeModal" aria-label="Fechar">×</button></div><form id="motoForm"><input type="hidden" id="motoId"><div class="form-grid"><label>Marca<input id="marca" required placeholder="Ex.: Honda"></label><label>Modelo<input id="modelo" required placeholder="Ex.: CRF 250F"></label><label>Cilindrada (cc)<input id="cilindrada" required type="number" min="1" step="0.1" placeholder="250"></label><label>Categoria<select id="categoria" required></select></label><label>Ano inicial<input id="anoInicial" required type="number" min="1900" max="2100"></label><label>Ano final<input id="anoFinal" required type="number" min="1900" max="2100"></label><label>Motor<select id="motor"><option value="4T">4 tempos</option><option value="2T">2 tempos</option></select></label><label>Nome título<input id="nomeTitulo" required placeholder="CRF250F"></label></div><div class="modal-foot"><button type="button" class="subtle-btn" id="cancelModal">Cancelar</button><button class="primary-btn" type="submit">Salvar registro</button></div></form></section></div>
   <div class="modal-backdrop hidden" id="noteModalBackdrop"><section class="modal note-modal" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle"><div class="modal-head"><div><p class="eyebrow">MEMÓRIA DA OPERAÇÃO</p><h2 id="noteModalTitle">Adicionar nota</h2><p class="modal-context" id="noteContext"></p></div><button class="close-btn" id="closeNoteModal" aria-label="Fechar">×</button></div><form id="noteForm"><input type="hidden" id="noteId"><input type="hidden" id="noteMotoId"><label class="full-field">Moto<select id="noteMotoSelect"></select></label><div class="form-grid note-form-grid"><label>Tipo<select id="noteType"><option value="warning">Aviso</option><option value="info">Aplicação</option><option value="neutral">Compatibilidade</option></select></label><label>Título<input id="noteTitle" required placeholder="Ex.: Limite de ano"></label></div><label class="full-field">Nota<textarea id="noteText" required rows="5" placeholder="Ex.: Kawasaki 2 tempos até 2007."></textarea></label><div class="modal-foot"><button type="button" class="subtle-btn" id="cancelNoteModal">Cancelar</button><button class="primary-btn" type="submit">Salvar nota</button></div></form></section></div>
   <div class="toast" id="toast" role="status"></div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.17/dist/sweetalert2.all.min.js" defer></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/mobile-nav.js" defer></script>
   <script src="js/supabase-config.js"></script><script src="js/cloud-engine.js"></script><script src="js/vendor/supabase.js"></script><script src="js/account.js"></script>
 </body>
 </html>
