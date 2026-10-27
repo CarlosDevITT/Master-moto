@@ -5,7 +5,7 @@
  body:not(.auth-blocked) #sidebarToggle{display:none!important}
  body:not(.auth-blocked) .mm-mobile-dock{display:grid}
  .mm-mobile-dock{position:fixed;bottom:0;left:0;right:0;z-index:1100;grid-template-columns:1fr 1fr 1fr;align-items:end;gap:4px;padding:7px 14px calc(7px + env(safe-area-inset-bottom,0px));background:#0b0d12;border-top:1px solid #2b303b;box-shadow:0 -8px 30px #0003;color:#fff}
- .mm-mobile-dock button{background:transparent;border:0;color:#aeb5c3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:55px;font:600 11px/1.2 inherit;cursor:pointer}
+ .mm-mobile-dock button{background:transparent;border:0;color:#aeb5c3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:55px;font-family:inherit;font-size:11px;font-weight:600;line-height:1.2;cursor:pointer}
  .mm-mobile-dock button.is-active{color:#fff}
  .mm-mobile-dock .mm-dock-icon{font-size:25px;line-height:1.1}
  .mm-mobile-dock .mm-mobile-plus{color:#fff;transform:translateY(-15px);gap:3px}
