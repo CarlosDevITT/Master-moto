@@ -8,10 +8,9 @@ const home=$('#mmMobileHome'),modules=$('#mmMobileModules'),settings=$('#mmMobil
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 let open=false,lastFocus=null;
 const special=new Set(['bling','account','settings','system']);
-const retired=new Set(['guia','mercado']);
 const labelOf=b=>b.textContent.replace(/\s+/g,' ').trim().replace(/\d+$/,'').trim();
 function menuItems(kind){
-const nav=[...document.querySelectorAll('#sidebarNav [data-view]')].filter(b=>!retired.has(b.dataset.view));
+const nav=[...document.querySelectorAll('#sidebarNav [data-view]')];
 const items=nav.filter(b=>kind==='settings'?special.has(b.dataset.view):!special.has(b.dataset.view));
 if(kind==='settings'){
   const bling=nav.find(b=>b.dataset.view==='bling');
@@ -50,10 +49,10 @@ if(!original)return;
 hide();original.click();activate(view);window.scrollTo({top:0,behavior:'smooth'});
 }
 // Navegação centralizada e resiliente mesmo com scripts antigos em cache.
-const viewIds={catalogo:'catalogView',dashboard:'dashboardView',notas:'notesView',guia:'guideView',mercado:'marketView',precificacao:'pricingView',marcas:'brandsView',orders:'ordersView',pedidos:'ordersView',bling:'blingView',compat:'compatView'};
+const viewIds={catalogo:'catalogView',dashboard:'dashboardView',notas:'notesView',precificacao:'pricingView',marcas:'brandsView',orders:'ordersView',pedidos:'ordersView',bling:'blingView',compat:'compatView'};
 function activate(view){
   const id=viewIds[view]||view+'View',target=document.getElementById(id);
-  if(!target||retired.has(view))return;
+  if(!target)return;
   document.querySelectorAll('#mainContent > .content').forEach(el=>el.classList.toggle('hidden',el!==target));
   target.classList.remove('hidden');
   document.querySelectorAll('#sidebarNav [data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
@@ -64,7 +63,6 @@ function activate(view){
 document.getElementById('sidebarNav')?.addEventListener('click',e=>{
   const btn=e.target.closest('[data-view]');
   if(!btn)return;
-  if(retired.has(btn.dataset.view)){e.preventDefault();e.stopImmediatePropagation();return;}
   // Capture runs before older app.js handlers, and repairs view after their dispatch.
   const view=btn.dataset.view;
   queueMicrotask(()=>activate(view));
