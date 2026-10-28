@@ -50,7 +50,7 @@ if(!original)return;
 hide();original.click();activate(view);window.scrollTo({top:0,behavior:'smooth'});
 }
 // Navegação centralizada e resiliente mesmo com scripts antigos em cache.
-const viewIds={catalogo:'catalogView',dashboard:'dashboardView',notas:'notesView',guia:'guideView',mercado:'marketView',precificacao:'pricingView',marcas:'brandsView',orders:'ordersView',bling:'blingView',compat:'compatView'};
+const viewIds={catalogo:'catalogView',dashboard:'dashboardView',notas:'notesView',guia:'guideView',mercado:'marketView',precificacao:'pricingView',marcas:'brandsView',orders:'ordersView',pedidos:'ordersView',bling:'blingView',compat:'compatView'};
 function activate(view){
   const id=viewIds[view]||view+'View',target=document.getElementById(id);
   if(!target||retired.has(view))return;
