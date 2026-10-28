@@ -83,7 +83,7 @@
     }
   }
   function snapshot() {
-    return clone({ format: 'master-motos-backup', schemaVersion: 1, exportedAt: new Date().toISOString(), records, notes, profiles: MMPerfil.exportData(), guide: guideStore, favorites, preferences, pricing: window.MMPricing?.exportData() ?? null, brands: window.MMBrands?.exportData() ?? null, theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light' });
+    return clone({ format: 'master-motos-backup', schemaVersion: 1, exportedAt: new Date().toISOString(), records, notes, profiles: MMPerfil.exportData(), favorites, preferences, pricing: window.MMPricing?.exportData() ?? null, brands: window.MMBrands?.exportData() ?? null, theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light' });
   }
   function validateBackup(value) {
     if (!isObject(value) || value.format !== 'master-motos-backup' || value.schemaVersion !== 1) throw new Error('Escolha um backup completo do Master Motos.');
@@ -107,15 +107,9 @@
       if (item.rating != null && (!Number.isInteger(item.rating) || item.rating < 1 || item.rating > 5)) throw new Error('Avaliação em estrelas inválida.');
       profiles[key] = Object.fromEntries(['perfil', 'faixa', 'estrela', 'valor'].filter(field => item[field] != null).map(field => [field, String(item[field])])); if (item.rating != null) profiles[key].rating = item.rating;
     }
-    if (!isObject(value.guide) || value.guide.schemaVersion !== 1 || !isObject(value.guide.notes)) throw new Error('Notas de componentes inválidas no backup.');
-    const guide = { schemaVersion: 1, notes: {} };
-    for (const [key, list] of Object.entries(value.guide.notes)) {
-      if (!/^[1-9]\d*:[a-zA-Z0-9_-]+$/.test(key) || !Array.isArray(list) || list.some(note => !isObject(note) || !text(note.id) || !text(note.text) || !text(note.createdAt) || !text(note.updatedAt))) throw new Error('Nota de componente inválida no backup.');
-      guide.notes[key] = list.map(note => ({ id: note.id, text: note.text, createdAt: note.createdAt, updatedAt: note.updatedAt }));
-    }
     const pricing = value.pricing == null ? null : window.MMPricing.validateData(value.pricing);
     const brands = value.brands == null ? null : window.MMBrands.validateData(value.brands);
-    return { format: value.format, schemaVersion: 1, records: cleanedRecords, notes: cleanedNotes, profiles, guide, favorites: cleanFavorites(value.favorites || []), preferences: sanitizePreferences(value.preferences), pricing, brands, theme: value.theme === 'dark' ? 'dark' : 'light' };
+    return { format: value.format, schemaVersion: 1, records: cleanedRecords, notes: cleanedNotes, profiles, favorites: cleanFavorites(value.favorites || []), preferences: sanitizePreferences(value.preferences), pricing, brands, theme: value.theme === 'dark' ? 'dark' : 'light' };
   }
   function downloadBackup(data = snapshot()) {
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
@@ -125,7 +119,7 @@
     toast('Backup completo exportado. Guarde o arquivo em um local seguro.');
   }
   function publishSnapshot(data) {
-    records = clone(data.records); notes = clone(data.notes); guideStore = clone(data.guide);
+    records = clone(data.records); notes = clone(data.notes);
     MMPerfil.replaceData(data.profiles);
     if (data.pricing) window.MMPricing.replaceData(data.pricing);
     if (data.brands) window.MMBrands.replaceData(data.brands);
@@ -138,7 +132,7 @@
   }
   function restoreBackup(raw, recovery = false) {
     const data = validateBackup(raw);
-    const entries = [[STORAGE_KEY, data.records], [NOTES_KEY, data.notes], [PROFILE_KEY, data.profiles], [GUIDE_STORAGE_KEY, data.guide], [FAVORITES_KEY, data.favorites], [PREFS_KEY, data.preferences], [THEME_STORAGE_KEY, data.theme], [`${NOTES_KEY}-backup`, data.notes], [RECOVERY_KEY, recovery ? null : snapshot()]];
+    const entries = [[STORAGE_KEY, data.records], [NOTES_KEY, data.notes], [PROFILE_KEY, data.profiles], [FAVORITES_KEY, data.favorites], [PREFS_KEY, data.preferences], [THEME_STORAGE_KEY, data.theme], [`${NOTES_KEY}-backup`, data.notes], [RECOVERY_KEY, recovery ? null : snapshot()]];
     if (data.pricing) entries.push([window.MMPricing.storageKey, data.pricing]);
     if (data.brands) entries.push([window.MMBrands.storageKey, data.brands]);
     if (!writeTransaction(entries)) return false;
