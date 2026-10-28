@@ -1,6 +1,6 @@
 /* Login and account lifecycle. Application scripts load only after account hydration. */
 window.MMAccount = (() => {
-  const scripts=['shared.js','data.js','guide-data.js','perfil-data.js','perfil.js','app.js','pricing-engine.js','pricing.js','market-engine.js','market.js','brands.js','catalog-tools.js','catalog-abc.js','accessibility.js'];
+  const scripts=['shared.js','data.js','perfil-data.js','perfil.js','app.js','pricing-engine.js','pricing.js','brands.js','catalog-tools.js','accessibility.js'];
   const loadScript = file => new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='js/'+file;script.onload=resolve;script.onerror=()=>reject(Error('Não foi possível carregar o aplicativo.'));document.body.append(script);});
   async function loadApp(){ for(const file of scripts) await loadScript(file); }
   async function init(config, dependencies={}) {
