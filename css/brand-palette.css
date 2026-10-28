@@ -1,0 +1,55 @@
+/* Master Motos — identidade BLACK / AZUL / BRANCO
+   Uso deliberado de tons de azul e neutros para estados, bordas e contraste. */
+:root{
+  --bg:#f3f6fc;--surface:#ffffff;--ink:#0a1222;--muted:#50627b;--line:#d9e3f2;
+  --yellow:#1263e6;--yellow-soft:#eaf2ff;--green:#1263e6;--blue:#1263e6;
+  --shadow:0 12px 30px rgba(6,30,77,.09);
+  --mm-accent:#1263e6;--mm-accent-hover:#0848b9;--mm-on-accent:#ffffff;
+  --mm-panel:#ffffff;--mm-panel-soft:#eaf2ff;--mm-text:#0a1222;
+  --mm-border:#d9e3f2;--mm-muted:#50627b;
+  color-scheme:light;
+}
+body.dark-mode{
+  --bg:#05080f;--surface:#0d1727;--ink:#f7fbff;--muted:#a4b8d6;--line:#243b5d;
+  --yellow:#4e9bff;--yellow-soft:#102e58;--green:#4e9bff;--blue:#4e9bff;
+  --shadow:0 12px 30px rgba(0,0,0,.28);
+  --mm-accent:#4e9bff;--mm-accent-hover:#83bbff;--mm-on-accent:#05080f;
+  --mm-panel:#0d1727;--mm-panel-soft:#102e58;--mm-text:#f7fbff;
+  --mm-border:#243b5d;--mm-muted:#a4b8d6;
+  color-scheme:dark;
+}
+body,body.dark-mode{background:var(--bg);color:var(--ink)}
+.topbar,.workspace-card,.chart-card,.stat-card,.modal,.mm-bling .bling-panel,.mm-compat .compat-panel{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.sidebar,.mm-mobile-dock{background:#05080f!important;color:#fff}
+.sidebar .nav-item.active,.sidebar .nav-item:hover{background:#103a78!important;color:#fff}
+.sidebar .nav-icon,.sidebar .brand-mark{color:#79b9ff!important}
+.brand-mark{background:#1263e6!important}
+.primary-btn,.mm-orders .mm-orders-quick button:first-child,.mm-compat .primary-btn,.mm-bling .primary-btn{background:var(--mm-accent)!important;border-color:var(--mm-accent)!important;color:var(--mm-on-accent)!important;box-shadow:0 7px 18px rgba(18,99,230,.18)}
+.primary-btn:hover{background:var(--mm-accent-hover)!important}
+.mm-mobile-dock .mm-mobile-plus>span{background:#1263e6!important;box-shadow:0 7px 24px rgba(18,99,230,.35)!important}
+.mm-mobile-sheet{background:#071426!important;border-color:#24518a!important}
+.mm-mobile-link{background:#102946!important;border-color:#294c7a!important;color:#fff!important}
+.mm-mobile-link-icon{background:#16457d!important;color:#fff!important}
+.mm-mobile-sheet-head small{color:#7db9ff!important}
+.mm-mobile-backdrop{background:rgba(0,6,17,.8)!important}
+.mm-bling{--bling-red:var(--mm-accent)}
+.mm-bling .bling-hero,.mm-compat .compat-hero,.mm-orders .mm-orders-head{background:#071426!important;color:#fff!important}
+.mm-bling .bling-tag{background:#1263e6!important;color:#fff}
+.mm-orders .mm-order-status,.mm-orders .mm-orders-stats strong{color:var(--mm-accent)}
+.mm-orders button[data-act],.mm-orders .mm-order-item button{border-color:var(--line)}
+.mm-bling .bling-metrics>div{background:var(--surface);border-color:var(--line)}
+.mm-compat .compat-result,.mm-compat .compat-empty,.mm-bling .bling-preview{border-color:var(--line)}
+.mm-bling input,.mm-compat input,.mm-compat select,.mm-bling select{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.search,.search-large,.filter-panel,.filter-panel select,.form-grid input,.form-grid select,.full-field input,.full-field select,textarea,.subtle-btn{border-color:var(--line);color:var(--ink)}
+.quick-chip.active,.tab.active{color:var(--mm-accent)!important;border-color:var(--mm-accent)!important}
+.sidebar .sync-dot,.module-status i,.note-dot{background:var(--mm-accent)!important}
+a:not(.skip-link){accent-color:var(--mm-accent)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--mm-accent)!important;outline-offset:2px}
+body.dark-mode .search,body.dark-mode .subtle-btn,body.dark-mode .filter-btn,body.dark-mode .row-action,body.dark-mode .page-buttons button,body.dark-mode .pagination select,body.dark-mode .close-btn{background:#132843!important;color:#e3efff!important;border-color:#29466d!important}
+body.dark-mode .filter-panel,body.dark-mode th,body.dark-mode .form-grid input,body.dark-mode .form-grid select,body.dark-mode .full-field input,body.dark-mode .full-field select,body.dark-mode textarea{background:#0b2039!important;color:#fff!important;border-color:#29466d!important}
+body.dark-mode tbody tr:hover{background:#16335a!important}
+body.dark-mode .theme-btn,body.dark-mode .icon-btn,body.dark-mode .tab.active{color:#7db9ff!important}
+body.dark-mode .stat-card.dark{background:#071426!important;border-color:#29466d!important}
+body.dark-mode select option{background:#0b2039!important;color:#fff!important}
+body.dark-mode .mm-bling .bling-panel,body.dark-mode .mm-compat .compat-panel{background:#0d1727!important;color:#fff!important;border-color:#29466d!important}
+@media(max-width:800px){body:not(.auth-blocked) .main{background:var(--bg)}}
