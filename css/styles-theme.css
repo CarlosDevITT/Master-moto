@@ -1,10 +1,10 @@
 body.dark-mode {
-  --bg: #0d1117;
-  --surface: #151b24;
-  --ink: #edf1f7;
+  --bg: #09111b;
+  --surface: #0e1b2b;
+  --ink: #ebf1f9;
   --muted: #a2adbc;
-  --line: #2a3442;
-  --yellow-soft: #3b3017;
+  --line: #1b3251;
+  --yellow-soft: #15263e;
   --shadow: 0 12px 30px rgba(0, 0, 0, .22);
   color-scheme: dark;
 }
@@ -26,14 +26,14 @@ body.dark-mode .page-buttons button,
 body.dark-mode .pagination select,
 body.dark-mode .close-btn,
 body.dark-mode .card-note {
-  background: #1d2632;
+  background: #14253b;
   border-color: var(--line);
   color: var(--muted);
 }
 
 body.dark-mode .filter-panel,
 body.dark-mode th {
-  background: #111720;
+  background: #0c1725;
   border-color: var(--line);
 }
 
@@ -43,37 +43,37 @@ body.dark-mode .form-grid input,
 body.dark-mode .full-field input,
 body.dark-mode .full-field select,
 body.dark-mode textarea {
-  background: #111720;
+  background: #0c1725;
   border-color: var(--line);
   color: var(--ink);
 }
 
 body.dark-mode td {
-  border-color: #26303d;
+  border-color: #192e4a;
 }
 
 body.dark-mode tbody tr:hover {
-  background: #202817;
+  background: #101d2f;
 }
 
 body.dark-mode .tab.active {
-  color: #ffd86a;
+  color: #6eabfb;
 }
 
 body.dark-mode .stat-card.dark {
-  background: #202936;
-  border-color: #202936;
+  background: #162841;
+  border-color: #162841;
 }
 
 body.dark-mode .pagination select option,
 body.dark-mode select option {
-  background: #111720;
+  background: #0c1725;
   color: var(--ink);
 }
 
 body.dark-mode .theme-btn,
 body.dark-mode .icon-btn {
-  color: #ffd45a;
+  color: #5ea2fb;
 }
 
 body.dark-mode .search input,
