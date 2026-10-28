@@ -328,6 +328,8 @@ function renderFilterSummary() {
 }
 
 setupGuideModule(); setupCatalogModules(); setupNotesModule(); populateOptions(); MMPerfil.init(); render();
+// Módulos aposentados: preservar dados históricos, retirar somente a navegação.
+['guia','mercado'].forEach(name=>document.querySelectorAll('#sidebarNav [data-view="'+name+'"]').forEach(el=>el.remove()));
 $('#search').addEventListener('input', (event) => { state.query = event.target.value; $('#searchLarge').value = state.query; state.page = 1; render(false); });
 $('#searchLarge').addEventListener('input', (event) => { state.query = event.target.value; $('#search').value = state.query; state.page = 1; render(false); });
 document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); $('#searchLarge').focus(); } });
@@ -347,7 +349,7 @@ $('.nav').addEventListener('click', event => {
   if (!button) return;
   const view = button.dataset.view;
   // Módulos externos possuem seu próprio controlador de navegação.
-  if (!['catalogo','dashboard','notas','guia','precificacao','mercado','marcas'].includes(view)) return;
+  if (!['catalogo','dashboard','notas','precificacao','marcas'].includes(view)) return;
   const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', guia: 'guideView', precificacao: 'pricingView', mercado: 'marketView', marcas: 'brandsView' };
   $$('.main > .content').forEach(section => section.classList.toggle('hidden', section.id !== views[view]));
   $$('.nav-item').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-current', item === button ? 'page' : 'false'); });
