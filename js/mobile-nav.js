@@ -8,9 +8,10 @@ const home=$('#mmMobileHome'),modules=$('#mmMobileModules'),settings=$('#mmMobil
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 let open=false,lastFocus=null;
 const special=new Set(['bling','account','settings','system']);
+const retired=new Set(['guia','mercado']);
 const labelOf=b=>b.textContent.replace(/\s+/g,' ').trim().replace(/\d+$/,'').trim();
 function menuItems(kind){
-const nav=[...document.querySelectorAll('#sidebarNav [data-view]')];
+const nav=[...document.querySelectorAll('#sidebarNav [data-view]')].filter(b=>!retired.has(b.dataset.view));
 const items=nav.filter(b=>kind==='settings'?special.has(b.dataset.view):!special.has(b.dataset.view));
 if(kind==='settings'){
   const bling=nav.find(b=>b.dataset.view==='bling');
@@ -46,8 +47,34 @@ lastFocus?.focus?.({preventScroll:true});
 function navigate(view){
 const original=[...document.querySelectorAll('#sidebarNav [data-view]')].find(b=>b.dataset.view===view);
 if(!original)return;
-hide();original.click();window.scrollTo({top:0,behavior:'smooth'});
+hide();original.click();activate(view);window.scrollTo({top:0,behavior:'smooth'});
 }
+// Navegação centralizada e resiliente mesmo com scripts antigos em cache.
+const viewIds={catalogo:'catalogView',dashboard:'dashboardView',notas:'notesView',guia:'guideView',mercado:'marketView',precificacao:'pricingView',marcas:'brandsView',orders:'ordersView',bling:'blingView',compat:'compatView'};
+function activate(view){
+  const id=viewIds[view]||view+'View',target=document.getElementById(id);
+  if(!target||retired.has(view))return;
+  document.querySelectorAll('#mainContent > .content').forEach(el=>el.classList.toggle('hidden',el!==target));
+  target.classList.remove('hidden');
+  document.querySelectorAll('#sidebarNav [data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
+  const label=document.querySelector('#sidebarNav [data-view="'+view+'"]')?.textContent?.replace(/\\s+/g,' ').trim();
+  const title=document.getElementById('pageTitle');if(title&&label)title.textContent=label;
+  home.classList.toggle('is-active',view==='dashboard');
+}
+document.getElementById('sidebarNav')?.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-view]');
+  if(!btn)return;
+  if(retired.has(btn.dataset.view)){e.preventDefault();e.stopImmediatePropagation();return;}
+  // Capture runs before older app.js handlers, and repairs view after their dispatch.
+  const view=btn.dataset.view;
+  queueMicrotask(()=>activate(view));
+},true);
+function ensureVisible(){
+  const visible=[...document.querySelectorAll('#mainContent > .content')].some(el=>!el.classList.contains('hidden'));
+  if(!visible)activate('catalogo');
+}
+document.addEventListener('DOMContentLoaded',()=>{ensureVisible();});
+window.addEventListener('load',()=>{ensureVisible();});
 home.onclick=()=>navigate('dashboard');
 modules.onclick=()=>toggle('modules');
 settings.onclick=()=>toggle('settings');
