@@ -32,7 +32,7 @@ const savedNotes = readLocalJson(NOTES_KEY, null);
 const backupNotes = readLocalJson(`${NOTES_KEY}-backup`, []);
 const validNote = (note) => note && Number.isSafeInteger(Number(note.id)) && Number(note.id) > 0 && typeof note.title === 'string' && typeof note.text === 'string' && ['warning', 'info', 'neutral'].includes(note.type) && (note.refs == null || (Array.isArray(note.refs) && note.refs.every(ref => typeof ref === 'string'))) && (note.updatedAt == null || typeof note.updatedAt === 'string');
 let notes = (Array.isArray(savedNotes) ? savedNotes : Array.isArray(backupNotes) ? backupNotes : []).filter(validNote).map(note => ({ ...note, id: Number(note.id) }));
-let state = { tab: 'todos', query: '', marketFamily: '', category: '', brand: '', engine: '', year: '', yearMin: '', yearMax: '', notesOnly: false, page: 1, pageSize: 50, sort: 'marca', dir: 1, compact: false, perfil: '', faixa: '', estrela: '' };
+let state = { tab: 'todos', query: '', category: '', brand: '', engine: '', year: '', yearMin: '', yearMax: '', notesOnly: false, page: 1, pageSize: 50, sort: 'marca', dir: 1, compact: false, perfil: '', faixa: '', estrela: '' };
 let notesUi = { type: 'all', sort: 'recent' };
 const selectedMotoIds = new Set();
 const $ = (selector) => document.querySelector(selector);
@@ -63,47 +63,15 @@ const esc = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&':
 function commitCatalog(nextRecords, nextNotes = notes, profileDraft = null, resetAux = false) {
   const ids = new Set(nextRecords.map(record => Number(record.id)));
   const profiles = Object.fromEntries(Object.entries(profileDraft || MMPerfil.exportData()).filter(([id]) => ids.has(Number(id))));
-  const guide = { schemaVersion: GUIDE_SCHEMA_VERSION, notes: resetAux ? {} : Object.fromEntries(Object.entries(guideStore.notes).filter(([key]) => ids.has(Number(key.split(':')[0])))) };
-  if (!MMStore.commit([[STORAGE_KEY, nextRecords], [NOTES_KEY, nextNotes], ['master-motos-perfil-v1', profiles], [GUIDE_STORAGE_KEY, guide]])) return false;
-  records = nextRecords; notes = nextNotes; guideStore = guide; MMPerfil.replaceData(profiles);
+  if (!MMStore.commit([[STORAGE_KEY, nextRecords], [NOTES_KEY, nextNotes], ['master-motos-perfil-v1', profiles]])) return false;
+  records = nextRecords; notes = nextNotes; MMPerfil.replaceData(profiles);
   $('#lastUpdate').textContent = 'agora'; return true;
 }
 function notesFor(motoId) { return notes.filter((note) => Number(note.motoId) === Number(motoId)); }
 function motoName(motoId) { if (!motoId) return 'Nota geral'; const moto = records.find((record) => Number(record.id) === Number(motoId)); return moto ? `${moto.marca} ${moto.modelo}` : 'Moto removida'; }
 function typeLabel(type) { return ({ warning: 'Aviso', info: 'Aplicação', neutral: 'Compatibilidade' }[type] || 'Nota'); }
 
-const GUIDE_STORAGE_KEY = 'mm_guia_notes_v1';
-const GUIDE_SCHEMA_VERSION = 1;
-let guideStorageWarningShown = false;
-function readGuideStore() {
-  try {
-    const parsed = JSON.parse(MMStorage.getItem(GUIDE_STORAGE_KEY) || 'null');
-    return parsed && parsed.schemaVersion === GUIDE_SCHEMA_VERSION && parsed.notes && typeof parsed.notes === 'object' ? parsed : { schemaVersion: GUIDE_SCHEMA_VERSION, notes: {} };
-  } catch (error) {
-    return { schemaVersion: GUIDE_SCHEMA_VERSION, notes: {} };
-  }
-}
-let guideStore = readGuideStore();
-function writeGuideStore(next = guideStore) {
-  try {
-    MMStorage.setItem(GUIDE_STORAGE_KEY, JSON.stringify(next));
-    guideStore = next; return true;
-  } catch (error) {
-    if (!guideStorageWarningShown) { guideStorageWarningShown = true; toast('Não foi possível salvar as notas do guia neste navegador.'); }
-    return false;
-  }
-}
-function guideKey(motoId, componentId) { return `${motoId}:${componentId}`; }
-function guideNotesFor(motoId, componentId) { return Array.isArray(guideStore.notes[guideKey(motoId, componentId)]) ? guideStore.notes[guideKey(motoId, componentId)] : []; }
-function getGuideMotoId(record) { return record?.id ?? record?.motoId ?? null; }
-function guideTypeFor(record) {
-  const enduro = /enduro|cross country|dual sport/i.test(record?.categoria || '');
-  if (record?.doisTempos) return enduro ? 'enduro-2t' : 'cross-2t';
-  return enduro ? 'enduro-4t' : 'cross-4t';
-}
-
 function matches(record) {
-  if (state.marketFamily && window.MMMarket?.get(record)?.id !== state.marketFamily) return false;
   const haystack = normalize(`${record.marca} ${record.modelo} ${record.nomeTitulo} ${record.categoria} ${record.cilindrada} ${record.doisTempos ? '2T' : '4T'}`).replace(/[^a-z0-9]/g, '');
   const terms = normalize(state.query).trim().split(/\s+/).filter(Boolean);
   if (!terms.every(term => {
@@ -164,10 +132,10 @@ function render(full = true) {
   $('#resultSummary').textContent = rows.length ? `Exibindo ${fmt((state.page - 1) * state.pageSize + 1)}–${fmt(Math.min(state.page * state.pageSize, rows.length))} de ${fmt(rows.length)} motos` : 'Nenhuma moto encontrada'; $('#exportBtn').disabled = rows.length === 0; $('#pageInfo').textContent = `Página ${state.page} de ${pages}`; $('.pagination .current').textContent = state.page;
   $('#prevPage').disabled = state.page === 1; $('#nextPage').disabled = state.page === pages;
   $('#motoRows').innerHTML = visible.map((record) => `<tr data-id="${record.id}"><td><input class="row-check" type="checkbox" aria-label="Selecionar ${esc(record.modelo)}"></td><td class="brand-cell">${esc(record.marca)}</td><td class="model-cell">${esc(record.modelo)}</td><td class="cc">${fmt(record.cilindrada)} cc</td><td><span class="engine ${record.doisTempos ? 'two' : ''}">${record.doisTempos ? '2T' : '4T'}</span></td><td class="year">${record.anoInicial} — ${record.anoFinal}</td><td class="category">${categoryBadge(record.categoria)}</td>${MMPerfil.cells(record)}<td class="note-cell">${noteBadge(record)}</td><td class="title-cell">${esc(record.nomeTitulo)}</td><td><div class="row-actions"><button class="row-action add-note" title="Adicionar nota">▤</button><button class="row-action edit" title="Editar">✎</button><button class="row-action delete" title="Excluir">⌫</button></div></td></tr>`).join('') || '<tr><td colspan="13" class="catalog-empty"><strong>Nenhuma moto encontrada</strong><p>Experimente outra marca, modelo ou ano, ou limpe os filtros.</p><div><button class="subtle-btn" data-empty-action="clear">Limpar busca e filtros</button><button class="primary-btn" data-empty-action="new">+ Cadastrar moto</button></div></td></tr>';
-  const activeFilters = [state.marketFamily, state.brand, state.category, state.engine, state.year, state.notesOnly, state.perfil, state.faixa, state.estrela].filter(Boolean).length;
+  const activeFilters = [state.brand, state.category, state.engine, state.year, state.notesOnly, state.perfil, state.faixa, state.estrela].filter(Boolean).length;
   $('#filterCount').textContent = activeFilters; $('#filterCount').classList.toggle('visible', Boolean(activeFilters));
-  ensureGuideButtons(); renderSelectionState(); renderFilterSummary();
-  window.MMCatalogTools?.render(visible); window.MMCatalogABC?.render();
+  renderSelectionState(); renderFilterSummary();
+  window.MMCatalogTools?.render(visible);
   if (full) { renderDashboard(); renderNotes(); MMPerfil.render(); }
 }
 
@@ -189,9 +157,6 @@ function renderNotes() {
   $('#notesGrid').innerHTML = visibleNotes.length ? visibleNotes.map((note) => `<article class="note-card ${esc(note.type)}" data-note-id="${note.id}"><div class="note-card-head"><span class="note-type"><i></i>${typeLabel(note.type)}</span><div class="note-card-actions"><button class="note-edit" title="Editar nota">✎</button><button class="note-delete" title="Excluir nota">⌫</button></div></div><h3>${esc(note.title)}</h3><p>${esc(note.text)}</p><div class="note-card-foot"><strong>${esc(motoName(note.motoId))}</strong><span>${esc(note.updatedAt || 'agora')}</span></div></article>`).join('') : '<div class="notes-empty"><div class="empty-icon">▤</div><h2>Nenhuma nota encontrada</h2><p>Use as notas para guardar limites de ano, aplicações e alertas de cadastro.</p><button class="primary-btn" id="emptyNewNote">+ Criar primeira nota</button></div>';
 }
 
-function ensureGuideButtons() {
-  return;
-}
 function renderSelectionState() {
   const rows = [...$('#motoRows').querySelectorAll('tr[data-id]')];
   rows.forEach((row) => { const id = Number(row.dataset.id); const checked = selectedMotoIds.has(id); row.classList.toggle('is-selected', checked); const checkbox = row.querySelector('.row-check'); if (checkbox) checkbox.checked = checked; });
@@ -200,63 +165,6 @@ function renderSelectionState() {
   $('#selectedCount').textContent = selectedMotoIds.size; $('#bulkBar').classList.toggle('hidden', selectedMotoIds.size === 0);
   window.MMCatalogTools?.syncSelection();
 }
-
-function guideComponentsFor(record) {
-  return window.MM_GUIDE_COMPONENTS[guideTypeFor(record)] || window.MM_GUIDE_COMPONENTS['cross-4t'];
-}
-
-function renderGuideMotoOptions(selectedId) {
-  const select = $('#guideMotoSelect');
-  if (!select) return;
-  select.innerHTML = records.map((record) => `<option value="${record.id}">${esc(record.marca)} ${esc(record.modelo)} · ${record.anoInicial}–${record.anoFinal}</option>`).join('');
-  if (selectedId && records.some((record) => Number(record.id) === Number(selectedId))) select.value = selectedId;
-}
-
-function showGuideTooltip(button, component) {
-  const stage = $('#guideStage'); const tooltip = $('#guideTooltip');
-  if (!stage || !tooltip) return;
-  tooltip.textContent = '';
-  const title = document.createElement('strong'); title.textContent = component.nome;
-  const description = document.createElement('span'); description.textContent = component.descricao;
-  tooltip.append(title, description); tooltip.classList.add('is-visible');
-  const maxLeft = Math.max(8, stage.clientWidth - 248); const maxTop = Math.max(8, stage.clientHeight - 90);
-  tooltip.style.left = `${Math.min(maxLeft, Math.max(8, button.offsetLeft + 24))}px`;
-  tooltip.style.top = `${Math.min(maxTop, Math.max(8, button.offsetTop - 18))}px`;
-}
-function hideGuideTooltip() { $('#guideTooltip')?.classList.remove('is-visible'); }
-
-function renderGuide(recordId = null) {
-  const select = $('#guideMotoSelect'); if (!select) return;
-  const id = Number(recordId || select.value || records[0]?.id); const record = records.find((item) => Number(item.id) === id);
-  if (!record) { $('#guideBody').innerHTML = '<div class="guide-error">Nenhuma moto disponível para o guia.</div>'; return; }
-  select.value = id; const components = guideComponentsFor(record); const adjustments = window.MM_GUIDE_ADJUSTMENTS?.[id] || {};
-  const svg = window.MM_GUIDE_DIAGRAMS?.[guideTypeFor(record)] || window.MM_GUIDE_DIAGRAMS?.base || '';
-  $('#guideMeta').textContent = `${record.marca} ${record.modelo} · ${record.doisTempos ? '2T' : '4T'} · ${guideTypeFor(record)}`;
-  $('#guideBody').innerHTML = `<div class="guide-grid"><article class="guide-card"><div class="guide-card-head"><h2>Diagrama lateral</h2><small>Selecione um ponto para abrir as notas</small></div><div id="guideStage" class="guide-stage">${svg}<div id="guideTooltip" class="guide-tooltip" role="tooltip"></div>${components.map((component) => { const point = adjustments[component.id] || component; const noteCount = guideNotesFor(id, component.id).length; return `<button type="button" class="guide-hotspot ${noteCount ? 'has-notes' : ''}" style="--hotspot-x:${point.x}%;--hotspot-y:${point.y}%" data-component-id="${esc(component.id)}" aria-label="${esc(component.nome)}">${noteCount ? `<span class="guide-hotspot-count">${noteCount}</span>` : ''}</button>`; }).join('')}</div><div class="guide-legend"><span><i></i>Componente</span><span><i class="notes"></i>Com nota salva</span><span>Tipo: ${esc(guideTypeFor(record))}</span></div></article><aside class="guide-card guide-components"><div class="guide-card-head"><h2>Componentes</h2><small>${components.length} pontos</small></div><div class="guide-component-list">${components.map((component) => { const count = guideNotesFor(id, component.id).length; return `<button type="button" class="guide-component ${count ? 'has-notes' : ''}" data-component-id="${esc(component.id)}"><i></i><span>${esc(component.nome)}</span>${count ? `<b>${count}</b>` : ''}</button>`; }).join('')}</div><div class="guide-footer-actions"><button type="button" class="subtle-btn" id="guideExportBtn">↧ Exportar notas</button><button type="button" class="subtle-btn" id="guideImportBtn">↥ Importar notas</button><input type="file" id="guideImportFile" accept="application/json"></div></aside></div>`;
-  $('#guideBody').querySelectorAll('[data-component-id]').forEach((button) => {
-    const component = components.find((item) => item.id === button.dataset.componentId);
-    button.addEventListener('mouseenter', () => showGuideTooltip(button, component)); button.addEventListener('focus', () => showGuideTooltip(button, component)); button.addEventListener('mouseleave', hideGuideTooltip); button.addEventListener('blur', hideGuideTooltip);
-    button.addEventListener('click', (event) => {
-      if (event.pointerType === 'touch' && button.dataset.touchOpen !== '1') { button.dataset.touchOpen = '1'; showGuideTooltip(button, component); return; }
-      button.dataset.touchOpen = '0'; openGuideNotes(id, component);
-    });
-  });
-  $('#guideExportBtn').addEventListener('click', exportGuideNotes); $('#guideImportBtn').addEventListener('click', () => $('#guideImportFile').click()); $('#guideImportFile').addEventListener('change', importGuideNotes);
-}
-
-function openGuideNotes(motoId, component) {
-  const record = records.find((item) => Number(item.id) === Number(motoId)); if (!record) return;
-  $('#guideNoteMoto').textContent = `${record.marca} ${record.modelo} · ${record.anoInicial}–${record.anoFinal}`; $('#guideNoteComponent').textContent = component.nome; $('#guideNoteMotoId').value = motoId; $('#guideNoteComponentId').value = component.id; $('#guideNoteId').value = '';
-  $('#guideNoteText').value = ''; renderGuideNoteList(motoId, component.id); $('#guideNoteBackdrop').classList.remove('hidden'); setTimeout(() => $('#guideNoteText').focus(), 20);
-}
-function renderGuideNoteList(motoId, componentId) {
-  const list = $('#guideNoteList'); list.textContent = ''; const items = guideNotesFor(motoId, componentId);
-  if (!items.length) { const empty = document.createElement('div'); empty.className = 'guide-note-empty'; empty.textContent = 'Nenhuma nota cadastrada para esta peça.'; list.append(empty); return; }
-  items.forEach((note) => { const item = document.createElement('article'); item.className = 'guide-note-item'; const text = document.createElement('p'); text.textContent = note.text; const meta = document.createElement('div'); meta.className = 'guide-note-meta'; const date = document.createElement('span'); date.textContent = `Criada ${note.createdAt} · Editada ${note.updatedAt}`; const actions = document.createElement('span'); actions.className = 'guide-note-actions'; const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = 'Editar'; edit.addEventListener('click', () => { $('#guideNoteId').value = note.id; $('#guideNoteText').value = note.text; $('#guideNoteText').focus(); }); const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Excluir'; remove.addEventListener('click', () => { if (!confirm('Excluir esta nota do guia?')) return; const key = guideKey(motoId, componentId); const next = { ...guideStore, notes: { ...guideStore.notes, [key]: guideNotesFor(motoId, componentId).filter(entry => entry.id !== note.id) } }; if (!writeGuideStore(next)) return; renderGuideNoteList(motoId, componentId); renderGuide(motoId); }); actions.append(edit, remove); meta.append(date, actions); item.append(text, meta); list.append(item); });
-}
-function closeGuideNotes() { $('#guideNoteBackdrop')?.classList.add('hidden'); }
-function exportGuideNotes() { const blob = new Blob([JSON.stringify(guideStore, null, 2)], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'master-motos-notas-guia.json'; link.click(); URL.revokeObjectURL(link.href); toast('Notas do guia exportadas'); }
-function importGuideNotes(event) { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const parsed = JSON.parse(reader.result); const valid = parsed?.schemaVersion === GUIDE_SCHEMA_VERSION && parsed.notes && typeof parsed.notes === 'object' && !Array.isArray(parsed.notes) && Object.entries(parsed.notes).every(([key, items]) => /^[1-9]\d*:[a-zA-Z0-9_-]+$/.test(key) && Array.isArray(items) && items.every((note) => note && typeof note.id === 'string' && typeof note.text === 'string' && typeof note.createdAt === 'string' && typeof note.updatedAt === 'string')); if (!valid) throw new Error('invalid'); if (!confirm('Importar este arquivo e substituir as notas atuais do guia?')) return; if (!writeGuideStore(parsed)) return; renderGuide($('#guideMotoSelect').value); toast('Notas do guia importadas'); } catch (error) { toast('Arquivo de notas inválido.'); } finally { event.target.value = ''; } }; reader.readAsText(file); }
 
 function populateOptions() {
   const categories = [...new Set([...categoryOptions, ...records.map(r => r.categoria)])].sort((a,b) => a.localeCompare(b, 'pt-BR')).map((category) => `<option value="${esc(category)}">${esc(category)}</option>`).join(''); const brands = [...new Set(records.map(r => r.marca))].sort((a,b) => a.localeCompare(b, 'pt-BR')).map((brand) => `<option value="${esc(brand)}">${esc(brand)}</option>`).join('');
@@ -304,14 +212,8 @@ function setupCatalogModules() {
   $('.table-meta').insertAdjacentHTML('afterend', '<div id="bulkBar" class="bulk-bar hidden"><span><strong id="selectedCount">0</strong> registros selecionados</span><div class="bulk-actions"><button type="button" id="clearSelection" class="bulk-clear">Limpar seleção</button><button type="button" id="deleteSelected" class="bulk-delete">Apagar selecionados</button></div></div>');
 }
 
-function setupGuideModule() {
-  if (!$('[data-view="guia"]')) $('.nav').insertAdjacentHTML('beforeend', '<button class="nav-item" data-view="guia"><span class="nav-icon">◉</span> Guia de componentes</button>');
-  $('#notesView').insertAdjacentHTML('afterend', '<section class="content hidden guide-view" id="guideView"><div class="guide-shell"><div class="guide-header"><div><p class="eyebrow">MÓDULO 02 · APLICAÇÃO</p><h1>Guia de componentes</h1><p>Selecione uma moto e clique nos pontos do diagrama para registrar avisos por peça.</p><div id="guideMeta" class="guide-note-context"></div></div><div class="guide-actions"><select id="guideMotoSelect" class="guide-select" aria-label="Selecionar moto para o guia"></select></div></div><div id="guideBody"></div></div></section><div class="modal-backdrop hidden guide-note-backdrop" id="guideNoteBackdrop"><section class="modal guide-note-modal" role="dialog" aria-modal="true" aria-labelledby="guideNoteTitle"><div class="modal-head"><div><p class="eyebrow">NOTA DO COMPONENTE</p><h2 id="guideNoteTitle">Notas e avisos</h2><p id="guideNoteComponent" class="modal-context"></p><p id="guideNoteMoto" class="guide-note-context"></p></div><button class="close-btn" id="closeGuideNotes" aria-label="Fechar">×</button></div><div id="guideNoteList" class="guide-note-list"></div><form id="guideNoteForm" class="guide-note-form"><input type="hidden" id="guideNoteId"><input type="hidden" id="guideNoteMotoId"><input type="hidden" id="guideNoteComponentId"><textarea id="guideNoteText" required placeholder="Ex.: Kawasaki 2 tempos até 2007."></textarea><div class="modal-foot"><button type="button" class="subtle-btn" id="cancelGuideNotes">Fechar</button><button class="primary-btn" type="submit">Salvar nota</button></div></form></section></div>');
-}
-
 function renderFilterSummary() {
   const items = [];
-  if (state.marketFamily) items.push(['Família de mercado', state.marketFamily.replace('/', ' '), () => { state.marketFamily = ''; }]);
   if (state.query) items.push(['Busca', state.query, () => { state.query = ''; $('#search').value = ''; $('#searchLarge').value = ''; }]);
   if (state.brand) items.push(['Marca', state.brand, () => { state.brand = ''; $('#brandFilter').value = ''; }]);
   if (state.category) items.push(['Categoria', state.category, () => { state.category = ''; $('#categoryFilter').value = ''; }]);
@@ -327,7 +229,7 @@ function renderFilterSummary() {
   summary.querySelector('.clear-summary')?.addEventListener('click', () => $('#clearFilters').click());
 }
 
-setupGuideModule(); setupCatalogModules(); setupNotesModule(); populateOptions(); MMPerfil.init(); render();
+setupCatalogModules(); setupNotesModule(); populateOptions(); MMPerfil.init(); render();
 // Módulos aposentados: preservar dados históricos, retirar somente a navegação.
 ['guia','mercado'].forEach(name=>document.querySelectorAll('#sidebarNav [data-view="'+name+'"]').forEach(el=>el.remove()));
 $('#search').addEventListener('input', (event) => { state.query = event.target.value; $('#searchLarge').value = state.query; state.page = 1; render(false); });
@@ -335,7 +237,7 @@ $('#searchLarge').addEventListener('input', (event) => { state.query = event.tar
 document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); $('#searchLarge').focus(); } });
 $('#brandFilter').addEventListener('change', (event) => { state.brand = event.target.value; state.page = 1; render(false); }); $('#categoryFilter').addEventListener('change', (event) => { state.category = event.target.value; state.page = 1; render(false); }); $('#engineFilter').addEventListener('change', (event) => { state.engine = event.target.value; state.page = 1; render(false); });
 $('#yearFilter').addEventListener('change', (event) => { state.year = event.target.value; $('#customYearFields').classList.toggle('hidden', state.year !== 'range'); state.page = 1; render(false); }); $('#yearMin').addEventListener('input', (event) => { state.yearMin = event.target.value; state.page = 1; render(false); }); $('#yearMax').addEventListener('input', (event) => { state.yearMax = event.target.value; state.page = 1; render(false); }); $('#notesOnly').addEventListener('change', (event) => { state.notesOnly = event.target.checked; state.page = 1; render(false); });
-$('#filterBtn').addEventListener('click', () => { $('#filterPanel').classList.toggle('hidden'); $('#filterBtn').setAttribute('aria-expanded', String(!$('#filterPanel').classList.contains('hidden'))); }); $('#clearFilters').addEventListener('click', () => { state.page = 1; state.query = ''; $('#search').value = $('#searchLarge').value = ''; state.marketFamily = state.brand = state.category = state.engine = state.year = state.yearMin = state.yearMax = ''; state.notesOnly = false; $('#brandFilter').value = ''; $('#categoryFilter').value = ''; $('#engineFilter').value = ''; $('#yearFilter').value = ''; $('#yearMin').value = ''; $('#yearMax').value = ''; $('#notesOnly').checked = false; $('#customYearFields').classList.add('hidden'); render(); });
+$('#filterBtn').addEventListener('click', () => { $('#filterPanel').classList.toggle('hidden'); $('#filterBtn').setAttribute('aria-expanded', String(!$('#filterPanel').classList.contains('hidden'))); }); $('#clearFilters').addEventListener('click', () => { state.page = 1; state.query = ''; $('#search').value = $('#searchLarge').value = ''; state.brand = state.category = state.engine = state.year = state.yearMin = state.yearMax = ''; state.notesOnly = false; $('#brandFilter').value = ''; $('#categoryFilter').value = ''; $('#engineFilter').value = ''; $('#yearFilter').value = ''; $('#yearMin').value = ''; $('#yearMax').value = ''; $('#notesOnly').checked = false; $('#customYearFields').classList.add('hidden'); render(); });
 $$('[data-tab]').forEach((button) => button.addEventListener('click', () => { $$('[data-tab]').forEach((item) => item.classList.remove('active')); button.classList.add('active'); state.tab = button.dataset.tab; state.page = 1; render(false); })); $$('[data-quick]').forEach((button) => button.addEventListener('click', () => { $$('[data-quick]').forEach((item) => item.classList.remove('active')); button.classList.add('active'); const quick = button.dataset.quick; state.engine = quick === '2T' || quick === '4T' ? quick : ''; state.notesOnly = quick === 'notes'; $('#engineFilter').value = state.engine; $('#notesOnly').checked = state.notesOnly; state.page = 1; render(false); }));
 $$('th[data-sort]').forEach((header) => header.addEventListener('click', () => { const key = header.dataset.sort; state.dir = state.sort === key ? -state.dir : 1; state.sort = key; render(false); })); $('#pageSize').addEventListener('change', (event) => { state.pageSize = Number(event.target.value); state.page = 1; render(false); }); $('#prevPage').addEventListener('click', () => { state.page -= 1; render(false); }); $('#nextPage').addEventListener('click', () => { state.page += 1; render(false); });
 $('#newMoto').addEventListener('click', () => openMotoModal()); $('#dashboardNew').addEventListener('click', () => openMotoModal()); $('#newNote').addEventListener('click', () => openNoteModal()); $('#closeModal').addEventListener('click', closeMotoModal); $('#cancelModal').addEventListener('click', closeMotoModal); $('#closeNoteModal').addEventListener('click', closeNoteModal); $('#cancelNoteModal').addEventListener('click', closeNoteModal); $('#modalBackdrop').addEventListener('click', (event) => { if (event.target.id === 'modalBackdrop') closeMotoModal(); }); $('#noteModalBackdrop').addEventListener('click', (event) => { if (event.target.id === 'noteModalBackdrop') closeNoteModal(); });
@@ -350,12 +252,11 @@ $('.nav').addEventListener('click', event => {
   const view = button.dataset.view;
   // Módulos externos possuem seu próprio controlador de navegação.
   if (!['catalogo','dashboard','notas','precificacao','marcas'].includes(view)) return;
-  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', guia: 'guideView', precificacao: 'pricingView', mercado: 'marketView', marcas: 'brandsView' };
+  const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', precificacao: 'pricingView', marcas: 'brandsView' };
   $$('.main > .content').forEach(section => section.classList.toggle('hidden', section.id !== views[view]));
   $$('.nav-item').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-current', item === button ? 'page' : 'false'); });
-  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', guia: 'Guia de componentes', precificacao: 'Precificação', mercado: 'Curva ABC do catálogo', marcas: 'Marcas' };
+  const labels = { catalogo: 'Catálogo de motos', dashboard: 'Visão geral', notas: 'Notas e avisos', precificacao: 'Precificação', marcas: 'Marcas' };
   $('#pageTitle').textContent = labels[view] || 'Catálogo de motos';
-  if (view === 'guia') { renderGuideMotoOptions(); renderGuide(); }
 });
 applyTheme(savedTheme);
 $('#themeBtn').addEventListener('click', () => {
@@ -364,19 +265,6 @@ $('#themeBtn').addEventListener('click', () => {
   try { MMStorage.setItem(THEME_STORAGE_KEY, nextTheme); } catch (error) { toast('Tema aplicado somente nesta sessão.'); return; }
   toast(nextTheme === 'dark' ? 'Modo escuro ativado' : 'Modo claro ativado');
 });
-
-function openGuideForMoto(motoId) {
-  $$('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === 'guia'));
-  $('#catalogView').classList.add('hidden'); $('#dashboardView').classList.add('hidden'); $('#notesView').classList.add('hidden'); $('#guideView').classList.remove('hidden'); $('#pageTitle').textContent = 'Guia de componentes';
-  renderGuideMotoOptions(motoId); renderGuide(motoId);
-}
-const guideNav = $('[data-view="guia"]');
-guideNav?.addEventListener('click', () => openGuideForMoto($('#guideMotoSelect')?.value || records[0]?.id));
-$('#guideMotoSelect').addEventListener('change', (event) => renderGuide(event.target.value));
-$('#motoRows').addEventListener('click', (event) => { const guideButton = event.target.closest('.open-guide'); if (guideButton) { const row = guideButton.closest('tr'); openGuideForMoto(Number(row.dataset.id)); } });
-$('#closeGuideNotes').addEventListener('click', closeGuideNotes); $('#cancelGuideNotes').addEventListener('click', closeGuideNotes); $('#guideNoteBackdrop').addEventListener('click', (event) => { if (event.target.id === 'guideNoteBackdrop') closeGuideNotes(); });
-$('#guideNoteForm').addEventListener('submit', (event) => { event.preventDefault(); const motoId = Number($('#guideNoteMotoId').value); const componentId = $('#guideNoteComponentId').value; const key = guideKey(motoId, componentId); const now = new Date().toLocaleString('pt-BR'); const noteId = $('#guideNoteId').value; const list = guideNotesFor(motoId, componentId); const next = noteId ? list.map((note) => note.id === noteId ? { ...note, text: $('#guideNoteText').value.trim(), updatedAt: now } : note) : [...list, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text: $('#guideNoteText').value.trim(), createdAt: now, updatedAt: now }]; const draft = { ...guideStore, notes: { ...guideStore.notes, [key]: next } }; if (writeGuideStore(draft)) { $('#guideNoteId').value = ''; $('#guideNoteText').value = ''; renderGuideNoteList(motoId, componentId); renderGuide(motoId); toast(noteId ? 'Nota do guia atualizada' : 'Nota do guia salva'); } });
-document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeGuideNotes(); hideGuideTooltip(); } });
 
 $('#motoRows').addEventListener('change', (event) => { if (!event.target.matches('.row-check')) return; const row = event.target.closest('tr'); const id = Number(row.dataset.id); if (event.target.checked) selectedMotoIds.add(id); else selectedMotoIds.delete(id); renderSelectionState(); });
 $('#selectAll').addEventListener('change', (event) => { $('#motoRows').querySelectorAll('tr[data-id]').forEach((row) => { const id = Number(row.dataset.id); if (event.target.checked) selectedMotoIds.add(id); else selectedMotoIds.delete(id); }); renderSelectionState(); });
