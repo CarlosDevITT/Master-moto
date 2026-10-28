@@ -346,6 +346,8 @@ $('.nav').addEventListener('click', event => {
   const button = event.target.closest('[data-view]');
   if (!button) return;
   const view = button.dataset.view;
+  // Módulos externos possuem seu próprio controlador de navegação.
+  if (!['catalogo','dashboard','notas','guia','precificacao','mercado','marcas'].includes(view)) return;
   const views = { catalogo: 'catalogView', dashboard: 'dashboardView', notas: 'notesView', guia: 'guideView', precificacao: 'pricingView', mercado: 'marketView', marcas: 'brandsView' };
   $$('.main > .content').forEach(section => section.classList.toggle('hidden', section.id !== views[view]));
   $$('.nav-item').forEach(item => { item.classList.toggle('active', item === button); item.setAttribute('aria-current', item === button ? 'page' : 'false'); });
