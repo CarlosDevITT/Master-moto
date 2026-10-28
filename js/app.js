@@ -64,7 +64,7 @@ function commitCatalog(nextRecords, nextNotes = notes, profileDraft = null, rese
   const ids = new Set(nextRecords.map(record => Number(record.id)));
   const profiles = Object.fromEntries(Object.entries(profileDraft || MMPerfil.exportData()).filter(([id]) => ids.has(Number(id))));
   if (!MMStore.commit([[STORAGE_KEY, nextRecords], [NOTES_KEY, nextNotes], ['master-motos-perfil-v1', profiles]])) return false;
-  records = nextRecords; notes = nextNotes; MMPerfil.replaceData(profiles);
+  records = nextRecords; notes = nextNotes; MMPerfil.replaceData(profiles); window.dispatchEvent(new CustomEvent('mm:catalog-updated',{detail:{count:records.length}}));
   $('#lastUpdate').textContent = 'agora'; return true;
 }
 function notesFor(motoId) { return notes.filter((note) => Number(note.motoId) === Number(motoId)); }
