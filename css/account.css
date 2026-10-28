@@ -20,7 +20,7 @@
 .account-session button { white-space:normal; height:auto; min-height:36px; padding:8px 10px; }
 #accountConflict { flex-basis:100%; border-top:1px solid var(--line); padding-top:10px; }
 #accountConflict button { margin:8px 6px 0 0; }
-#accountSyncStatus[data-kind=conflict], #accountSyncStatus[data-kind=offline], #accountSyncStatus[data-kind=invalid] { color:#9a6500; }
-.dark-mode #accountSyncStatus[data-kind=conflict], .dark-mode #accountSyncStatus[data-kind=offline], .dark-mode #accountSyncStatus[data-kind=invalid] { color:#f4c85b; }
+#accountSyncStatus[data-kind=conflict], #accountSyncStatus[data-kind=offline], #accountSyncStatus[data-kind=invalid] { color:#044396; }
+.dark-mode #accountSyncStatus[data-kind=conflict], .dark-mode #accountSyncStatus[data-kind=offline], .dark-mode #accountSyncStatus[data-kind=invalid] { color:#5b9df4; }
 .account-card input:focus-visible { outline:2px solid var(--yellow); outline-offset:2px; }
 @media(max-width:600px) { .account-card { padding:24px; } .account-session { margin:12px 14px 0; padding:12px; align-items:stretch; } .account-session-meta { flex-basis:100%; } }
