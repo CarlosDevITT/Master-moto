@@ -13,3 +13,35 @@
 .note-content-field-hidden{display:none!important}
 .note-modal #noteTitle{font-size:17px;font-weight:700;line-height:1.25;padding:13px 14px;border-color:#cfd4dc}.note-modal #noteTitle::placeholder{color:#a0a7b2;font-size:15px;font-weight:500}.note-modal #noteText{min-height:150px;font-size:14px;line-height:1.55}.note-modal #noteText::placeholder{color:#a0a7b2}.note-modal .full-field>select{font-size:14px}
 .note-modal{width:min(700px,100%);padding:0;overflow:hidden}.note-modal .modal-head{margin:0;padding:22px 25px 18px;background:linear-gradient(135deg,#0f1c2c,#172b46);color:#fff}.note-modal .modal-head .eyebrow{color:#aeb8c5}.note-modal .modal-head h2{color:#fff}.note-modal .modal-context{color:#b4cae6}.note-modal .close-btn{background:rgba(255,255,255,.12);color:#fff}.note-modal form{padding:22px 25px 25px}.note-modal .full-field{margin-bottom:16px}.note-modal .full-field label,.note-modal .form-grid label{color:#505966}.note-modal input,.note-modal select,.note-modal textarea{transition:border-color .15s,box-shadow .15s}.note-modal input:focus,.note-modal select:focus,.note-modal textarea:focus{border-color:#2e78d9;box-shadow:0 0 0 3px #cfe3fe}.note-type-hint{display:block;margin-top:6px;color:#8b929d;font-size:11px;font-weight:400;line-height:1.4}.note-text-meta{display:flex;justify-content:space-between;gap:10px;margin-top:6px;color:#9299a4;font-size:11px;line-height:1.4}.note-text-meta b{color:#6d7581;font-weight:700}.note-modal .modal-foot{border-top:1px solid var(--line);padding-top:18px;margin-top:20px}.note-modal .modal-foot .subtle-btn{background:#f2f6fb}.note-card{position:relative;display:flex;flex-direction:column;min-height:206px;padding:19px 19px 15px;overflow:hidden}.note-card::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--yellow)}.note-card.info::before{background:var(--blue)}.note-card.neutral::before{background:#87909c}.note-card-head{margin-bottom:2px}.note-type{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:#d8e8fe}.note-card.info .note-type{background:#ebf3fe}.note-card.neutral .note-type{background:#e9f0f8}.note-type i{margin-right:0!important}.note-card h3{margin:14px 0 8px;font-size:18px;line-height:1.2}.note-card p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;min-height:0;margin:0;color:#586270;white-space:pre-wrap}.note-card-foot{align-items:center;margin-top:auto;padding-top:14px}.note-card-foot strong{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.note-card-actions{opacity:.75}.note-card:hover .note-card-actions{opacity:1}
+
+/* Catálogo de motos — modo enxuto, sem eliminar funcionalidades ou dados */
+#catalogView .hero-row{margin-bottom:14px}
+#catalogView .hero-row .lede{max-width:520px}
+#catalogView .catalog-search-compact{padding:18px 20px!important;margin-bottom:12px!important;display:grid!important;grid-template-columns:minmax(180px,.7fr) minmax(260px,1.4fr);align-items:center;gap:12px 18px}
+#catalogView .catalog-search-compact .search-focus-copy h2{font-size:1.12rem;margin:2px 0}
+#catalogView .catalog-search-compact .search-large{margin:0;min-width:0}
+#catalogView .catalog-search-compact .quick-filters{grid-column:1/-1;margin-top:0;display:flex;flex-wrap:wrap;gap:7px}
+#catalogView .catalog-search-compact .quick-chip{padding:7px 12px;font-size:.85rem}
+#catalogView .catalog-notes-quick{display:none}
+#catalogView .catalog-secondary-search,#catalogView .catalog-reset-secondary,#catalogView .catalog-compact-secondary{display:none!important}
+#catalogView .workspace-card{margin-top:0}
+#catalogView .module-heading{padding-top:14px;padding-bottom:10px}
+#catalogView .module-heading .eyebrow,#catalogView .module-heading .module-status,#catalogView .module-heading p{display:none}
+#catalogView .module-heading h2{font-size:1.1rem}
+#catalogView .toolbar{gap:12px;flex-wrap:wrap}
+#catalogView .toolbar-actions{margin-left:auto}
+#catalogView #filterBtn{white-space:nowrap}
+#catalogView .filter-panel.hidden{display:none!important}
+#catalogView .filter-panel{padding:14px;gap:10px}
+#catalogView .filter-summary:empty{display:none}
+#catalogView .table-meta{padding-block:9px}
+#catalogView .table-meta-actions{gap:6px}
+@media(max-width:850px){
+ #catalogView .catalog-search-compact{grid-template-columns:1fr!important;padding:14px!important;gap:10px}
+ #catalogView .catalog-search-compact .quick-filters{grid-column:1}
+ #catalogView .catalog-search-compact .search-focus-copy .eyebrow{display:none}
+ #catalogView .toolbar{align-items:stretch}
+ #catalogView .toolbar-actions{margin-left:0;width:100%}
+ #catalogView #filterBtn{width:100%;justify-content:center}
+ #catalogView .hero-row{align-items:center}
+}
