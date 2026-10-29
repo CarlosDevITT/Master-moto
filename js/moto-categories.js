@@ -18,22 +18,30 @@ const unique=values=>[...new Map(values.filter(Boolean).map(x=>[norm(x),x])).val
 function parse(book){
  const cats=[],sheetInfo=[];let count=0;
  for(const sheetName of book.SheetNames){
-  const rows=XLSX.utils.sheet_to_json(book.Sheets[sheetName],{header:1,defval:'',raw:false});
+  const rows=XLSX.utils.sheet_to_json(book.Sheets[sheetName],{header:1,defval:'',raw:false,blankrows:false});
   if(!rows.length)continue;
-  const first=rows.findIndex(r=>r.some(v=>clean(v)));
-  if(first<0)continue;
-  const headers=rows[first].map(norm);
-  const cols=headers.map((h,i)=>/^(categoria|subcategoria|segmento|tipodemoto|classificacao|grupo|familia)/.test(h)?i:-1).filter(i=>i>=0);
-  const selected=cols.length?cols:(headers.length===1?[0]:[]);
-  if(!selected.length){sheetInfo.push({name:sheetName,rows:rows.length,recognized:false});continue;}
-  for(const row of rows.slice(first+1)){
-   for(const index of selected){
+  let header=-1,cols=[];
+  // Cabeçalhos podem começar depois de linhas de título e instruções.
+  for(let i=0;i<Math.min(rows.length,25);i++){
+   const values=rows[i].map(norm);
+   const hits=values.map((h,j)=>/categoria|subcategoria|segmento|grupo|familia|classificacao|tipodemoto|tipopeca|sistema|departamento|secao/.test(h)?j:-1).filter(j=>j>=0);
+   if(hits.length){header=i;cols=hits;break;}
+  }
+  if(header<0){
+   // Planilhas de uma coluna com categorias sem cabeçalho.
+   const populated=rows.slice(0,15).filter(row=>row.some(v=>clean(v)));
+   const single=populated.length>0&&populated.every(row=>row.filter(v=>clean(v)).length===1);
+   if(single){header=-1;cols=[rows[0].findIndex(v=>clean(v))];}
+  }
+  if(!cols.length||cols[0]<0){sheetInfo.push({name:sheetName,rows:rows.length,recognized:false,headers:rows.slice(0,3).map(r=>r.map(clean))});continue;}
+  for(const row of rows.slice(header+1)){
+   for(const index of cols){
     const value=clean(row[index]);
-    if(value&&!/^\d+$/.test(value))cats.push(value);
+    if(value&&!/^\\d+$/.test(value)&&!/^categoria(s)?$/i.test(value))cats.push(value);
    }
    count++;
   }
-  sheetInfo.push({name:sheetName,rows:rows.length,recognized:true});
+  sheetInfo.push({name:sheetName,rows:rows.length,recognized:true,columns:cols});
  }
  return {categories:unique(cats),rows:count,sheets:sheetInfo};
 }
@@ -50,12 +58,12 @@ function updateCatalog(){
 }
 async function load(){
  try{
-  if(!window.XLSX)throw Error('Leitor Excel não carregado');
+  if(!window.XLSX){await new Promise((resolve,reject)=>{const t=setInterval(()=>{if(window.XLSX){clearInterval(t);clearTimeout(deadline);resolve();}},100);const deadline=setTimeout(()=>{clearInterval(t);reject(Error('Biblioteca Excel indisponível'));},8000);});}
   const response=await fetch(FILE+'?v=taxonomia-20261029',{cache:'no-cache'});
   if(!response.ok)throw Error('Planilha não disponível (HTTP '+response.status+')');
   const buffer=await response.arrayBuffer();
   const parsed=parse(XLSX.read(buffer,{type:'array'}));
-  if(!parsed.categories.length)throw Error('Nenhuma coluna de categoria reconhecida na planilha');
+  if(!parsed.categories.length)throw Error('Não foi possível identificar categorias. Abas: '+parsed.sheets.map(x=>x.name+(x.recognized?' (sem valores)':' (colunas não reconhecidas)')).join(', '));
   Object.assign(state,parsed,{status:'ready'});
   updateCatalog();
   window.dispatchEvent(new CustomEvent('mm:categories-updated',{detail:{categories:state.categories.slice(),rows:state.rows}}));
