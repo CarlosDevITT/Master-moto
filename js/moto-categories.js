@@ -23,7 +23,7 @@ function parse(book){
   const first=rows.findIndex(r=>r.some(v=>clean(v)));
   if(first<0)continue;
   const headers=rows[first].map(norm);
-  const cols=headers.map((h,i)=>/^(categoria|categorias|categoriaprincipal|subcategoria|subcategorias|segmento|tipodemoto|classificacao|grupo|familia)$/.test(h)?i:-1).filter(i=>i>=0);
+  const cols=headers.map((h,i)=>/^(categoria|subcategoria|segmento|tipodemoto|classificacao|grupo|familia)/.test(h)?i:-1).filter(i=>i>=0);
   const selected=cols.length?cols:(headers.length===1?[0]:[]);
   if(!selected.length){sheetInfo.push({name:sheetName,rows:rows.length,recognized:false});continue;}
   for(const row of rows.slice(first+1)){
