@@ -1,7 +1,7 @@
 /* Login and account lifecycle. Application scripts load only after account hydration. */
 window.MMAccount = (() => {
   const scripts=['shared.js','data.js','perfil-data.js','perfil.js','app.js','pricing-engine.js','pricing.js','brands.js','catalog-tools.js','accessibility.js'];
-  const loadScript = file => new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='js/'+file+'?v=taxonomia-real-20261029';script.onload=resolve;script.onerror=()=>reject(Error('Não foi possível carregar o aplicativo.'));document.body.append(script);});
+  const loadScript = file => new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='js/'+file+'?v=hierarquia-20261029';script.onload=resolve;script.onerror=()=>reject(Error('Não foi possível carregar o aplicativo.'));document.body.append(script);});
   async function loadApp(){ for(const file of scripts) await loadScript(file); }
   async function init(config, dependencies={}) {
     const appLoader=dependencies.loadApp || loadApp, raw=dependencies.storage || localStorage;
