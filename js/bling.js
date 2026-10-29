@@ -14,6 +14,7 @@ window.MMImportedBling=db;
 window.MMBlingCatalog={
   findSku(sku){return db.products.find(p=>p.sku.toLocaleUpperCase('pt-BR')===String(sku||'').trim().toLocaleUpperCase('pt-BR'))||null;},
   allProducts(){return db.products.slice();},
+  fitmentStats(){return {total:db.products.length,withApplication:db.products.filter(p=>String(p.fitment||'').trim()).length};},
   search(term,limit=12){const q=String(term||'').trim().toLocaleLowerCase('pt-BR');if(!q)return [];return db.products.filter(p=>(p.sku+' '+p.name).toLocaleLowerCase('pt-BR').includes(q)).slice(0,Math.min(limit,30));},
   suppliers(){return db.suppliers.slice();},
   stats(){return {products:db.products.length,suppliers:db.suppliers.length,updatedAt:db.updatedAt};}
@@ -52,7 +53,8 @@ const sku=find('codigo','sku','codigoproduto','codigointerno','referencia');
 const name=type==='products'?find('descricao','nomeproduto','produto','nome'):find('nome','razaosocial','fornecedor','contato');
 const phone=find('telefone','celular','fone');
 const categoryIndex=find('categoria','categoriaproduto','grupo','grupoproduto');
-const fitmentIndex=find('aplicacao','aplicacoes','compatibilidade','veiculoscompativeis','modeloscompativeis');
+const fitmentIndexes=headers.map((h,i)=>/^(aplicacao|aplicacoes|compatibilidade|veiculoscompativeis|modeloscompativeis|aplicacaoveiculos|observacoes|observacao|descricaocomplementar|informacoesadicionais|detalhes|descricaolonga)/.test(h)?i:-1).filter(i=>i>=0);
+
 const id=find('idbling','idproduto','idcontato','id');
 if(name<0||(type==='products'&&sku<0))throw Error(type==='products'?'Planilha precisa de colunas Código/SKU e Descrição.':'Planilha precisa da coluna Nome.');
 const result=[],seen=new Set();let invalid=0,duplicates=0;
@@ -60,7 +62,7 @@ for(const cells of rows.slice(1)){if(!cells.some(x=>String(x||'').trim()))contin
 const title=String(cells[name]||'').trim().slice(0,250),code=String(cells[sku]||'').trim().slice(0,120),externalId=id>=0?String(cells[id]||'').trim().slice(0,100):'';
 const key=type==='products'?code.toUpperCase():(externalId?'id:'+externalId:'name:'+normalize(title));
 if(!title||(type==='products'&&!code)){invalid++;continue;}if(seen.has(key)){duplicates++;continue;}seen.add(key);
-result.push(type==='products'?{sku:code,name:title,blingId:externalId,category:categoryIndex>=0?String(cells[categoryIndex]||'').trim().slice(0,120):'',fitment:fitmentIndex>=0?String(cells[fitmentIndex]||'').trim().slice(0,3000):''}:{code:externalId,name:title,phone:phone>=0?String(cells[phone]||'').trim().slice(0,40):''});
+result.push(type==='products'?{sku:code,name:title,blingId:externalId,category:categoryIndex>=0?String(cells[categoryIndex]||'').trim().slice(0,120):'',fitment:fitmentIndexes.map(i=>String(cells[i]||'').trim()).filter(Boolean).join(' | ').slice(0,5000)}:{code:externalId,name:title,phone:phone>=0?String(cells[phone]||'').trim().slice(0,40):''});
 if(result.length>150000)throw Error('Arquivo muito grande: máximo 150 mil registros.');
 }
 return {result,invalid,duplicates};
