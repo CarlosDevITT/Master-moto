@@ -66,7 +66,7 @@ const nav=document.createElement('button');nav.className='nav-item';nav.dataset.
 nav.onclick=()=>{document.querySelectorAll('.main > .content').forEach(x=>x.classList.toggle('hidden',x!==view));document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x===nav));view.classList.remove('hidden');$('#pageTitle').textContent='Compatibilidade';refresh();};
 document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="css/compat.css">');
 const product=sku=>window.MMBlingCatalog?.findSku(sku);
-const category=x=>String(product(x.sku)?.category||x.category||'Sem categoria').trim();
+const category=x=>{const p=product(x.sku);return String(p?.category||window.MMMotoCategories?.classify(p?.name||'')?.main||x.category||'Sem categoria').trim();};
 function catalogModels(){return catalogSnapshot();}
 const unique=arr=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{numeric:true}));
 function refresh(){
@@ -77,7 +77,7 @@ const filtered=models.filter(x=>!$('#compatBrand').value||norm(x.brand)===norm($
 const names=unique(filtered.map(x=>x.model));$('#compatModel').innerHTML='<option value="">Todos os modelos</option>'+names.map(x=>'<option>'+esc(x)+'</option>').join('');$('#compatModel').value=names.includes(m)?m:'';
 const years=new Set();filtered.filter(x=>!$('#compatModel').value||norm(x.model)===norm($('#compatModel').value)).forEach(x=>{if(x.start>=1950&&x.end<=2100&&x.end>=x.start)for(let n=x.start;n<=x.end;n++)years.add(n);});
 const ys=[...years].sort((a,b)=>b-a);$('#compatYear').innerHTML='<option value="">Todos os anos</option>'+ys.map(x=>'<option>'+x+'</option>').join('');$('#compatYear').value=ys.includes(Number(y))?y:'';
-const categories=unique([...allProducts().map(p=>p.category),...currentLinks().map(category),...(window.MMMotoCategories?.categories||[])]);$('#compatCategory').innerHTML='<option value="">Todas as categorias</option>'+categories.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');$('#compatCategory').value=categories.includes(c)?c:'';
+const categories=unique([...allProducts().map(p=>p.category||window.MMMotoCategories?.classify(p.name)?.main),...currentLinks().map(category),...(window.MMMotoCategories?.categories||[])]);$('#compatCategory').innerHTML='<option value="">Todas as categorias</option>'+categories.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');$('#compatCategory').value=categories.includes(c)?c:'';
 renderResults();
 }
 function renderResults(){
@@ -85,9 +85,9 @@ const brand=$('#compatBrand').value,model=$('#compatModel').value,year=Number($(
 const found=joined().filter(x=>(!brand||norm(x.brand)===norm(brand))&&(!model||norm(x.model)===norm(model))&&(!year||(year>=x.start&&year<=x.end))&&(!cat||norm(category(x))===norm(cat)||x.motos.some(m=>norm(m.category)===norm(cat)))&&(!sku||norm(x.sku).includes(sku)||norm(product(x.sku)?.name).includes(sku)));
 $('#compatSummary').textContent=found.length+' aplicações encontradas · '+currentLinks().length+' vínculos identificados';
 const matched=found.filter(x=>x.motos.length),withProduct=found.filter(x=>x.product);
-const taxonomy=window.MMMotoCategories;$('#compatTaxonomy').textContent=taxonomy?.status==='ready'?taxonomy.categories.length+' categorias carregadas da planilha Data':taxonomy?.status==='error'?'Categorias: '+taxonomy.error:'Carregando categorias da pasta Data…';
+const taxonomy=window.MMMotoCategories;$('#compatTaxonomy').textContent=taxonomy?.status==='ready'?taxonomy.categories.length+' categorias principais e '+taxonomy.rows+' subcategorias carregadas da planilha Data':taxonomy?.status==='error'?'Categorias: '+taxonomy.error:'Carregando categorias da pasta Data…';
 $('#compatCoverage').textContent=withProduct.length+' produtos encontrados no Bling · '+matched.length+' aplicações vinculadas a motos do catálogo';
-const unverified=allProducts().filter(p=>(!cat||norm(p.category)===norm(cat))&&(!sku||norm(p.sku).includes(sku)||norm(p.name).includes(sku))&&!found.some(x=>norm(x.sku)===norm(p.sku))).slice(0,40);
+const unverified=allProducts().filter(p=>(!cat||norm(p.category||window.MMMotoCategories?.classify(p.name)?.main)===norm(cat))&&(!sku||norm(p.sku).includes(sku)||norm(p.name).includes(sku))&&!found.some(x=>norm(x.sku)===norm(p.sku))).slice(0,40);
 const unverifiedHtml=unverified.length?'<h3>Produtos do Bling sem aplicação confirmada</h3>'+unverified.map(p=>'<article class="compat-result"><div><b>'+esc(p.sku)+'</b><p>'+esc(p.name)+'</p></div><small>Compatibilidade não informada na planilha</small></article>').join(''):'';
 $('#compatResults').innerHTML=found.length?found.slice(0,200).map(x=>'<article class="compat-result"><div><b>'+esc(x.sku)+'</b><p>'+esc(x.product?.name||'Produto não encontrado no catálogo Bling')+'</p></div><div><strong>'+esc(x.brand)+' · '+esc(x.model)+'</strong><small>'+x.start+(x.end!==x.start?'–'+x.end:'')+'</small><small>'+esc(x.motos.length?x.motos.length+' moto(s) no catálogo':'Moto não localizada no catálogo')+'</small></div></article>').join('')+(found.length>200?'<p>Exibindo os primeiros 200 resultados. Refine os filtros.</p>':''):'<p class="compat-empty">Nenhuma aplicação confirmada para os filtros. Isso não significa incompatibilidade.</p>'; 
 $('#compatResults').insertAdjacentHTML('beforeend',unverifiedHtml);
