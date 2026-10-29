@@ -11,7 +11,21 @@ window.MMMotoCategories={
   get categories(){return state.categories.slice();},
   get entries(){return (state.entries||[]).map(x=>({...x,synonyms:x.synonyms.slice()}));},
   subcategories(main){return unique((state.entries||[]).filter(x=>norm(x.main)===norm(main)).map(x=>x.sub));},
-  classify(name){const source=' '+norm(name)+' ';let best=null,score=0;for(const e of state.entries||[]){for(const term of [e.identification,...e.synonyms]){const token=norm(term);if(token.length<5)continue;if(source.includes(' '+token+' ')&&token.length>score){best=e;score=token.length;}}}return best?{main:best.main,sub:best.sub,path:best.path}:null;},
+  classify(name){
+    const source=norm(name),tokens=new Set(source.split(/[^a-z0-9]+/).filter(Boolean));
+    let best=null,score=0;
+    for(const e of state.entries||[]){
+      const candidates=[e.sub,e.identification,...e.synonyms];
+      for(const term of candidates){
+        const t=norm(term);if(t.length<4)continue;
+        const words=t.split(/[^a-z0-9]+/).filter(Boolean);
+        if(!words.length||!words.every(w=>tokens.has(w)))continue;
+        const points=words.length*20+t.length+(term===e.sub?3:0);
+        if(points>score){best=e;score=points;}
+      }
+    }
+    return best?{main:best.main,sub:best.sub,path:best.path,source:'inferred'}:null;
+  },
   get rows(){return state.rows;},
   get source(){return FILE;},
   get error(){return state.error;},
