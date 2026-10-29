@@ -70,7 +70,7 @@ const category=x=>{const p=product(x.sku);return String(p?.category||window.MMMo
 function catalogModels(){return catalogSnapshot();}
 const unique=arr=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{numeric:true}));
 const selectedCategory={main:'',sub:''};
-const classificationCache=new WeakMap();
+let classificationCache=new WeakMap();
 function classifyProduct(p){
   if(!p)return {main:'',sub:''};
   if(classificationCache.has(p))return classificationCache.get(p);
@@ -154,8 +154,8 @@ $('#compatResults').insertAdjacentHTML('beforeend',unverifiedHtml);
 }
 ['compatBrand','compatModel'].forEach(id=>$('#'+id).addEventListener('change',refresh));$('#compatYear').onchange=renderResults;$('#compatCategoryButton').onclick=()=>toggleCategoryMenu();$('#compatCategoryApply').onclick=()=>toggleCategoryMenu(false);$('#compatCategorySearch').oninput=renderCategoryTree;$('#compatSku').oninput=renderResults;
 $('#compatOpenBling').onclick=()=>document.querySelector('#sidebarNav [data-view="bling"]')?.click();
-window.addEventListener('mm:bling-updated',refresh);
+window.addEventListener('mm:bling-updated',()=>{classificationCache=new WeakMap();refresh();});
 window.addEventListener('mm:catalog-updated',refresh);
-window.addEventListener('mm:categories-updated',()=>{classificationCache.clear?.();refresh();});
+window.addEventListener('mm:categories-updated',()=>{classificationCache=new WeakMap();refresh();});
 refresh();
 })();
