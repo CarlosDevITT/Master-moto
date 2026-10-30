@@ -12,13 +12,13 @@ window.MMMotoCategories={
   get entries(){return (state.entries||[]).map(x=>({...x,synonyms:x.synonyms.slice()}));},
   subcategories(main){return unique((state.entries||[]).filter(x=>norm(x.main)===norm(main)).map(x=>x.sub));},
   classify(name){
-    const source=norm(name),tokens=new Set(source.split(/[^a-z0-9]+/).filter(Boolean));
+    const source=String(name??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(),tokens=new Set(source.split(/\s+/).filter(Boolean));
     let best=null,score=0;
     for(const e of state.entries||[]){
       const candidates=[e.sub,e.identification,...e.synonyms];
       for(const term of candidates){
-        const t=norm(term);if(t.length<4)continue;
-        const words=t.split(/[^a-z0-9]+/).filter(Boolean);
+        const t=String(term??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();if(t.length<4)continue;
+        const words=t.split(/\s+/).filter(Boolean);
         if(!words.length||!words.every(w=>tokens.has(w)))continue;
         const points=words.length*20+t.length+(term===e.sub?3:0);
         if(points>score){best=e;score=points;}
