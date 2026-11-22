@@ -82,7 +82,7 @@
   function defaults() {
     const makeCategory = (id, name, cost, shipping, premium, classic) => ({
       id, name, cost, shipping, profitPct: 0, promotionPct: 0,
-      commissions: { premium, classic, premiumAlt: 14, classicAlt: 11, commerce6: null, commerce3: null, store: null },
+      commissions: { premium: null, classic: null, premiumAlt: null, classicAlt: null, commerce6: null, commerce3: null, store: null },
       fixedFees: Object.fromEntries(channels.map(channel => [channel.id, 0])),
       scenarios: [{ id: 'standard', label: 'Sem taxa adicional', feePct: 0 }, { id: 'custom', label: 'Personalizada', feePct: 0 }],
       selectedScenario: 'standard', collapsed: false
@@ -193,9 +193,7 @@
     const ui = {};
     if (data.ui != null) {
       if (!object(data.ui) || Object.keys(data.ui).length > 405) fail();
-      const validPanels = channels.map(channel => 'breakdown-' + channel.id).join('|');
       for (const [key, value] of Object.entries(data.ui)) {
-        const pattern = new RegExp('^(settings|fees|method|tools|[a-zA-Z0-9-]{1,80}:(breakdown-(' + validPanels.replace(/\|/g, '|') + ')))$');
         if (!/^(settings|fees|method|tools|[a-zA-Z0-9-]{1,80}:(costs|channels|scenarios|breakdown-[a-zA-Z0-9-]+))$/.test(key) || typeof value !== 'boolean') fail();
         ui[key] = value;
       }
