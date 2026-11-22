@@ -101,7 +101,6 @@
   }
   function resultCardMarkup(channel, categoryId) {
     const ml = channel.group.indexOf('marketplace') === 0;
-    const rate = channel.setting;
     const label = channel.label;
     return '<section class="pricing-result pricing-result-' + channel.group + '" data-result-channel="' + channel.id + '">' +
       '<div class="pricing-result-top"><span class="pricing-channel-label">' + label + '</span><span class="pricing-rate" data-result-rate></span></div>' +
@@ -145,7 +144,7 @@
       '</div></details>' +
       groupMarkup('Mercado Livre', 'TABELA PADRÃO · 17% / 12%', 'pricing-platform-ml', ['premium', 'classic'], category.id) +
       groupMarkup('Mercado Livre', 'TABELA ALTERNATIVA · 14% / 11%', 'pricing-platform-ml-alt', ['premiumAlt', 'classicAlt'], category.id) +
-      groupMarkup('Tray · E-commerce', 'SITE · 6X SEM JUROS / 3X', 'pricing-platform-tray', ['commerce6', 'commerce3'], category.id) +
+      groupMarkup('Tray · E-commerce', 'SITE · 6X SEM JUROS / 3X COM DESCONTO', 'pricing-platform-tray', ['commerce6', 'commerce3'], category.id) +
       groupMarkup('Loja própria', 'BALCÃO · PIX', 'pricing-platform-store', ['store'], category.id) +
       '</div></article>';
   }
