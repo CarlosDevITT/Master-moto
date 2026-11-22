@@ -13,6 +13,7 @@ async function app(seed = {}, storageFailure = false, marketFailure = false) {
   const w = dom.window;
   w.TextDecoder = TextDecoder;
   w.confirm = () => true;
+  w.Swal = { fire: async () => ({ isConfirmed: true }) };
   w.URL.createObjectURL = () => 'blob:test';
   w.URL.revokeObjectURL = () => {};
   w.fetch = async url => {
