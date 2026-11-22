@@ -120,3 +120,100 @@ body.dark-mode #pricingView { --pricing-good: #7ba2d4; }
   .pricing-tools > div button { flex: 1; }
   #pricingView .pricing-quick-grid input { font-size: 18px; }
 }
+
+
+/* Calculadora 2.0 · hierarquia visual por canal e leitura rápida dos resultados. */
+#pricingView .pricing-quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#pricingView .pricing-quick-grid .pricing-field { min-width: 0; }
+#pricingView .pricing-quick-grid input { min-height: 52px; }
+.pricing-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 22px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+.pricing-summary-strip > div { display: grid; gap: 5px; min-width: 0; }
+.pricing-summary-strip span { color: var(--muted); font-size: 11px; line-height: 1.4; }
+.pricing-summary-strip strong { color: var(--ink); font: 700 17px 'Space Grotesk', sans-serif; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pricing-summary-strip .pricing-summary-wide { grid-column: 1 / -1; border-top: 1px solid var(--line); padding-top: 10px; }
+.pricing-summary-strip .pricing-summary-wide strong { font: 600 12px 'DM Sans', sans-serif; line-height: 1.6; }
+.pricing-category-advanced { margin: 0 0 22px; border: 1px solid var(--line); border-radius: 10px; }
+#pricingView .pricing-category-advanced > summary { padding: 12px 14px; font-size: 12px; }
+.pricing-category-advanced .pricing-advanced-grid { padding: 0 14px 14px; max-width: 340px; }
+.pricing-platform { margin: 24px 0 0; padding: 16px; border: 1px solid var(--line); border-radius: 14px; }
+.pricing-platform-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.pricing-platform-head .eyebrow { margin: 0 0 4px; font-size: 10px; letter-spacing: .09em; }
+.pricing-platform-head h3 { margin: 0; color: var(--ink); font: 700 17px 'Space Grotesk', sans-serif; }
+.pricing-platform-ml { --channel-accent: #b77912; --channel-soft: #fff7e5; border-color: color-mix(in srgb, #d99a25 35%, var(--line)); }
+.pricing-platform-ml-alt { --channel-accent: #9a6810; --channel-soft: #fffaf0; border-color: color-mix(in srgb, #d99a25 25%, var(--line)); }
+.pricing-platform-tray { --channel-accent: #2563c7; --channel-soft: #edf4ff; border-color: color-mix(in srgb, #3479df 35%, var(--line)); }
+.pricing-platform-store { --channel-accent: #16835b; --channel-soft: #eaf8f1; border-color: color-mix(in srgb, #16835b 30%, var(--line)); }
+.pricing-platform .pricing-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pricing-platform-store .pricing-results { grid-template-columns: minmax(0, 1fr); }
+.pricing-platform .pricing-result {
+  border-color: color-mix(in srgb, var(--channel-accent) 25%, var(--line));
+  border-top: 3px solid var(--channel-accent);
+  background: var(--surface);
+  border-radius: 11px;
+  padding: 16px;
+  gap: 9px;
+}
+.pricing-result-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pricing-result-top .pricing-channel-label { color: var(--ink); font-size: 12px; }
+.pricing-rate { color: var(--channel-accent); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pricing-result-caption { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .09em; }
+.pricing-platform .pricing-result > strong { color: var(--ink); font-size: clamp(25px, 2vw, 32px); line-height: 1.15; }
+.pricing-platform .pricing-result > small { min-height: 0; color: var(--channel-accent); font-size: 11px; font-weight: 600; }
+.pricing-platform .pricing-copy { width: 100%; border-color: color-mix(in srgb, var(--channel-accent) 30%, var(--line)); color: var(--channel-accent); font-weight: 700; }
+.pricing-platform .pricing-copy.is-copied { background: #e7f7ed; border-color: #16835b; color: #126744; }
+.pricing-promo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0 0; border-top: 1px dashed var(--line); }
+.pricing-promo > div { display: grid; gap: 3px; min-width: 0; }
+.pricing-promo span { color: var(--muted); font-size: 10px; font-weight: 700; }
+.pricing-promo strong { color: var(--ink); font-size: 16px; font-variant-numeric: tabular-nums; }
+.pricing-promo small { color: var(--channel-accent); font-size: 10px; line-height: 1.4; }
+.pricing-promo button { flex: 0 0 auto; font-size: 10px; padding: 7px 9px; }
+.pricing-platform .pricing-result details { border-top: 1px solid var(--line); padding-top: 8px; }
+.pricing-platform .pricing-result details summary { padding: 2px 0; color: var(--muted); font-size: 11px; }
+.pricing-platform .pricing-result dl { margin-top: 8px; font-size: 11px; }
+.pricing-platform .pricing-result dl > div { padding: 7px 0; }
+.pricing-platform .pricing-result dd { font-weight: 700; }
+.pricing-tools > div { padding: 12px; }
+#pricingView .pricing-save-bar { align-items: center; }
+#pricingView .pricing-save-bar > div { align-items: center; }
+#pricingView .pricing-settings-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#pricingView .pricing-section-title { align-items: end; }
+#pricingView .pricing-section-title > div:first-child { display: grid; gap: 4px; }
+#pricingView .pricing-section-title h2 { margin: 0; }
+#pricingView .pricing-category-actions button,
+#pricingView .pricing-organize button { min-height: 36px; }
+#pricingView :is(button, summary, a):focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 65%, white); outline-offset: 2px; }
+body.dark-mode #pricingView .pricing-summary-strip { background: var(--surface); }
+body.dark-mode #pricingView .pricing-platform-ml { --channel-soft: #302719; }
+body.dark-mode #pricingView .pricing-platform-ml-alt { --channel-soft: #302b20; }
+body.dark-mode #pricingView .pricing-platform-tray { --channel-soft: #1d2a40; }
+body.dark-mode #pricingView .pricing-platform-store { --channel-soft: #1b3028; }
+body.dark-mode #pricingView .pricing-platform .pricing-result { background: var(--surface); }
+body.dark-mode #pricingView .pricing-platform .pricing-copy.is-copied { background: #163b2b; color: #9ce0bb; }
+@media (max-width: 900px) {
+  #pricingView .pricing-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #pricingView .pricing-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  #pricingView .pricing-quick-grid,
+  #pricingView .pricing-settings-grid { grid-template-columns: 1fr; }
+  .pricing-summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
+  .pricing-summary-strip .pricing-summary-wide { grid-column: 1 / -1; }
+  .pricing-platform { padding: 12px; }
+  .pricing-platform .pricing-results,
+  .pricing-platform-store .pricing-results { grid-template-columns: 1fr; }
+  .pricing-platform .pricing-result { padding: 14px; }
+  .pricing-promo { align-items: flex-start; flex-wrap: wrap; }
+  .pricing-promo button { width: 100%; }
+  #pricingView .pricing-section-title { align-items: flex-start; }
+  #pricingView .pricing-organize { width: 100%; }
+  #pricingView .pricing-organize button { flex: 1; }
+}
