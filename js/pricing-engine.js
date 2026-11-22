@@ -196,7 +196,7 @@
       const validPanels = channels.map(channel => 'breakdown-' + channel.id).join('|');
       for (const [key, value] of Object.entries(data.ui)) {
         const pattern = new RegExp('^(settings|fees|method|tools|[a-zA-Z0-9-]{1,80}:(breakdown-(' + validPanels.replace(/\|/g, '|') + ')))$');
-        if (!/^(settings|fees|method|tools|[a-zA-Z0-9-]{1,80}:breakdown-[a-zA-Z0-9-]+)$/.test(key) || typeof value !== 'boolean') fail();
+        if (!/^(settings|fees|method|tools|[a-zA-Z0-9-]{1,80}:(costs|channels|scenarios|breakdown-[a-zA-Z0-9-]+))$/.test(key) || typeof value !== 'boolean') fail();
         ui[key] = value;
       }
     }
