@@ -87,9 +87,12 @@ test('Lucro desejado entra no divisor e promoção calcula o preço De sem alter
   assert.equal(result.valid, true);
   assert.equal(result.trayFee, 5);
   assert.equal(result.price, 148.44);
-  assert.equal(result.promotionPrice, 164.94);
-  assert.equal(result.discountAmount, 16.5);
+  assert.equal(result.promotionPrice, null);
   assert.ok(Math.abs(result.actualMargin - 20) < 0.02);
+  const marketplace = E.calculate(c, s, d.settings, 'premium');
+  assert.equal(marketplace.valid, true);
+  assert.equal(marketplace.promotionPrice, 196.09);
+  assert.equal(marketplace.discountAmount, 19.61);
 });
 
 test('Mercado Livre aplica tarifa unitária abaixo do limite e não duplica frete informado', () => {
