@@ -99,7 +99,7 @@
     const host = element.closest('[data-pricing-category]');
     return host && data.categories.find(item => item.id === host.dataset.pricingCategory);
   }
-  function resultCardMarkup(channel) {
+  function resultCardMarkup(channel, categoryId) {
     const ml = channel.group.indexOf('marketplace') === 0;
     const rate = channel.setting;
     const label = channel.label;
@@ -110,12 +110,12 @@
       '<small data-result-profit>Preencha os dados para calcular.</small>' +
       '<button type="button" class="subtle-btn pricing-copy" data-pricing-action="copy" data-copy-channel="' + channel.id + '" disabled>Copiar preço</button>' +
       (ml ? '<div class="pricing-promo"><div><span>Preço de referência · DE</span><strong data-result-promotion>—</strong><small data-result-discount>Informe a taxa de promoção.</small></div><button type="button" class="subtle-btn" data-pricing-action="copy-promotion" data-copy-channel="' + channel.id + '" disabled>Copiar preço De</button></div>' : '') +
-      '<details ' + panelAttrs('placeholder:breakdown-' + channel.id).replace('placeholder:', '') + '><summary>Detalhamento</summary><dl data-result-breakdown></dl></details>' +
+      '<details ' + panelAttrs(categoryId + ':breakdown-' + channel.id) + '><summary>Detalhamento</summary><dl data-result-breakdown></dl></details>' +
       '</section>';
   }
-  function groupMarkup(title, subtitle, groupClass, ids) {
+  function groupMarkup(title, subtitle, groupClass, ids, categoryId) {
     return '<section class="pricing-platform ' + groupClass + '"><header class="pricing-platform-head"><div><span class="eyebrow">' + subtitle + '</span><h3>' + title + '</h3></div></header><div class="pricing-results">' +
-      channels.filter(channel => ids.includes(channel.id)).map(resultCardMarkup).join('') +
+      channels.filter(channel => ids.includes(channel.id)).map(channel => resultCardMarkup(channel, categoryId)).join('') +
       '</div></section>';
   }
   function categoryMarkup(category, index) {
@@ -143,10 +143,10 @@
       '<details class="pricing-category-advanced"><summary>Ajustes desta simulação <small>Taxa adicional e configurações específicas</small></summary><div class="pricing-advanced-grid">' +
       input(scenario.feePct, 'data-quick-scenario="feePct" data-min="0" data-max="100" aria-label="Taxa adicional"', 'Taxa adicional (%)', 'Opcional. A tributação base de 12% fica nos parâmetros gerais.') +
       '</div></details>' +
-      groupMarkup('Mercado Livre', 'TABELA PADRÃO · 17% / 12%', 'pricing-platform-ml', ['premium', 'classic']) +
-      groupMarkup('Mercado Livre', 'TABELA ALTERNATIVA · 14% / 11%', 'pricing-platform-ml-alt', ['premiumAlt', 'classicAlt']) +
-      groupMarkup('Tray · E-commerce', 'SITE · 6X SEM JUROS / 3X', 'pricing-platform-tray', ['commerce6', 'commerce3']) +
-      groupMarkup('Loja própria', 'BALCÃO · PIX', 'pricing-platform-store', ['store']) +
+      groupMarkup('Mercado Livre', 'TABELA PADRÃO · 17% / 12%', 'pricing-platform-ml', ['premium', 'classic'], category.id) +
+      groupMarkup('Mercado Livre', 'TABELA ALTERNATIVA · 14% / 11%', 'pricing-platform-ml-alt', ['premiumAlt', 'classicAlt'], category.id) +
+      groupMarkup('Tray · E-commerce', 'SITE · 6X SEM JUROS / 3X', 'pricing-platform-tray', ['commerce6', 'commerce3'], category.id) +
+      groupMarkup('Loja própria', 'BALCÃO · PIX', 'pricing-platform-store', ['store'], category.id) +
       '</div></article>';
   }
   function renderFeeRows() {
