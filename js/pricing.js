@@ -188,8 +188,7 @@
     for (const channel of channels) {
       const result = E.calculate(category, scenario, data.settings, channel.id);
       const card = host.querySelector('[data-result-channel="' + channel.id + '"]');
-      const rate = data.settings[channel.setting];
-      card.querySelector('[data-result-rate]').textContent = Number.isFinite(rate) ? shown(rate) + '%' : '';
+      card.querySelector('[data-result-rate]').textContent = result.valid ? shown(result.commission) + '%' : '';
       card.querySelector('[data-result-price]').textContent = result.valid ? money.format(result.price) : '—';
       card.querySelector('[data-result-profit]').textContent = result.valid ? 'Lucro líquido: ' + money.format(result.profit) : result.message;
       card.classList.toggle('pricing-invalid', !result.valid);
@@ -315,7 +314,7 @@
   });
   $('#pricingView').addEventListener('toggle', event => {
     const panel = event.target;
-    if (!panel.isConnected || !panel.dataset.pricingPanel || Boolean(data.ui[panel.dataset.pricingPanel]) === panel.open) return;
+    if (!panel.isConnected || !panel.dataset.pricingPanel || data.ui[panel.dataset.pricingPanel] === panel.open) return;
     data.ui[panel.dataset.pricingPanel] = panel.open; saveLayout();
   }, true);
   $('#pricingView').addEventListener('focusin', event => {
