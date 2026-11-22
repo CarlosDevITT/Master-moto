@@ -109,7 +109,7 @@
       '<strong data-result-price>—</strong>' +
       '<small data-result-profit>Preencha os dados para calcular.</small>' +
       '<button type="button" class="subtle-btn pricing-copy" data-pricing-action="copy" data-copy-channel="' + channel.id + '" disabled>Copiar preço</button>' +
-      (ml ? '<div class="pricing-promo"><div><span>Preço de referência · DE</span><strong data-result-promotion>—</strong><small data-result-discount>Informe a taxa de promoção.</small></div><button type="button" class="subtle-btn" data-pricing-action="copy-promotion" data-copy-channel="' + channel.id + '" disabled>Copiar preço De</button></div>' : '') +
+      (ml ? '<div class="pricing-promo"><div><span>Preço de referência · DE</span><strong data-result-promotion>—</strong><small data-result-discount>Informe a taxa de promoção.</small></div><button type="button" class="subtle-btn" data-copy-kind="promotion" data-pricing-action="copy-promotion" data-copy-channel="' + channel.id + '" disabled>Copiar preço De</button></div>' : '') +
       '<details ' + panelAttrs(categoryId + ':breakdown-' + channel.id) + '><summary>Detalhamento</summary><dl data-result-breakdown></dl></details>' +
       '</section>';
   }
