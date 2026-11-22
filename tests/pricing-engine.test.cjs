@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const E = require('../js/pricing-engine.js');
 test('Precificação preserva os exemplos e calcula sem lucro desejado, incluindo tarifa fixa', () => {
   const d = E.defaults(), c = d.categories[0];
-  assert.equal(E.calculate(c, c.scenarios[0], d.settings, 'premium').price, 1179.84);
+  assert.equal(E.calculate(c, c.scenarios[0], d.settings, 'premium').price, 797.64);
   c.cost = 100; c.shipping = 10; c.packaging = 5; c.extra = 5; c.fixedFees.premium = 5;
   c.commissions.premium = 10; d.settings.fixedPct = 5;
   const r = E.calculate(c, { feePct: 10, marginPct: 25 }, d.settings, 'premium');
@@ -58,11 +58,54 @@ test('Preferências antigas continuam válidas e a organização aceita apenas p
   }
   const migrated = E.validate(legacy);
   assert.equal(migrated.categories[0].cost, 553.32);
-  assert.equal(migrated.categories[0].scenarios[0].feePct, 23);
+  assert.equal(migrated.categories[0].scenarios[0].feePct, 0);
   assert.equal(migrated.categories[0].scenarios[0].label, 'Taxa antigo');
   assert.equal(migrated.settings.marginPct, undefined);
   assert.equal(migrated.categories[0].scenarios[0].marginPct, undefined);
   assert.equal(migrated.categories[0].packaging, undefined);
   assert.equal(legacy.categories[0].cost, 541.32);
   assert.deepEqual(E.validate(migrated), migrated);
+});
+
+
+test('Regras fixas Tray respeitam os limites de custo informados', () => {
+  assert.equal(E.trayFixedFee(49.99), 10);
+  assert.equal(E.trayFixedFee(50), 5);
+  assert.equal(E.trayFixedFee(100), 5);
+  assert.equal(E.trayFixedFee(100.01), 0);
+  assert.equal(E.trayFixedFee(101), 0);
+  assert.equal(E.trayFixedFee(101.01), 0);
+  const d = E.defaults();
+  assert.equal(d.settings.commerce3Pct, 4);
+  assert.equal(d.settings.commerce6Pct, 12);
+});
+
+test('Lucro desejado entra no divisor e promoção calcula o preço De sem alterar o Por', () => {
+  const d = E.defaults(), c = d.categories[0], s = { feePct: 0 };
+  c.cost = 80; c.shipping = 10; c.profitPct = 20; c.promotionPct = 10;
+  const result = E.calculate(c, s, d.settings, 'commerce3');
+  assert.equal(result.valid, true);
+  assert.equal(result.trayFee, 5);
+  assert.equal(result.price, 148.44);
+  assert.equal(result.promotionPrice, 164.94);
+  assert.equal(result.discountAmount, 16.5);
+  assert.ok(Math.abs(result.actualMargin - 20) < 0.02);
+});
+
+test('Mercado Livre aplica tarifa unitária abaixo do limite e não duplica frete informado', () => {
+  const d = E.defaults(), c = d.categories[0], s = { feePct: 0 };
+  d.settings.mlFixedFeeBelowThreshold = 6.5;
+  c.cost = 30; c.shipping = 4;
+  const below = E.calculate(c, s, d.settings, 'premium');
+  assert.equal(below.valid, true);
+  assert.equal(below.base, 34);
+  assert.equal(below.shipping, 4);
+  assert.equal(below.mlFixedFee, 6.5);
+  assert.equal(below.freeShippingRequired, false);
+  c.cost = 100; c.shipping = 12;
+  const above = E.calculate(c, s, d.settings, 'premium');
+  assert.equal(above.valid, true);
+  assert.equal(above.base, 112);
+  assert.equal(above.mlFixedFee, 0);
+  assert.equal(above.freeShippingRequired, true);
 });
