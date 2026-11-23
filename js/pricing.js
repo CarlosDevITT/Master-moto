@@ -123,6 +123,7 @@
     { id: 'fixed-store', name: 'Loja', eyebrow: 'VENDA DIRETA · PIX', channels: ['store'], fields: ['cost', 'shipping', 'profitPct'] }
   ];
   function normalizeSections(value) {
+    if (value.settings.storePct === -2) value.settings.storePct = 0;
     const ids = fixedSections.map(section => section.id);
     if (value.categories.length === 3 && value.categories.every((item, index) => item.id === ids[index])) return value;
     try { if (!MMStorage.getItem('master-motos-pricing-archive-v3')) MMStorage.setItem('master-motos-pricing-archive-v3', JSON.stringify(value.categories)); } catch {}
@@ -261,7 +262,8 @@
     const rows = [['Painel', 'Custo', 'Frete', 'Lucro desejado %', 'Promoção ML %', 'Canal', 'Taxa canal %', 'Custo total', 'Preço Por', 'Preço De', 'Lucro líquido', 'Situação']];
     data.categories.forEach(category => {
       const scenario = category.scenarios.find(item => item.id === category.selectedScenario) || category.scenarios[0];
-      const section = fixedSections.find(item => item.id === category.id);\n      section.channels.forEach(channelId => {\n        const channel = channels.find(item => item.id === channelId);
+      const section = fixedSections.find(item => item.id === category.id);
+      section.channels.forEach(channelId => {\n        const channel = channels.find(item => item.id === channelId);
         const result = E.calculate(category, scenario, data.settings, channel.id);
         rows.push([
           category.name, category.cost, category.shipping, category.profitPct, category.promotionPct, channel.label,
