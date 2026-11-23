@@ -307,7 +307,7 @@
     '</div></details>' +
     '<details class="workspace-card pricing-fee-check" data-pricing-panel="fees"><summary>Conferir taxas de um preço conhecido</summary><div class="pricing-settings-body">' +
     input(data.knownPrice, 'id="pricingKnownPrice" data-min="0" data-max="1000000000" aria-label="Preço de venda conhecido"', 'Preço de venda conhecido (R$)') +
-    '<div id="pricingFeeRows"></div><button type="button" class="subtle-btn" data-pricing-action="add-fee">+ Adicionar taxa</button><p class="pricing-help">Consulta o valor percentual de cada taxa sem alterar os preços das simulações.</p></div></details>' +
+    '<div id="pricingFeeRows"></div><button type="button" class="subtle-btn" data-pricing-action="add-fee">+ Adicionar taxa</button><p class="pricing-help">Consulta o valor percentual de cada taxa sem alterar os cálculos dos painéis.</p></div></details>' +
     '<div class="pricing-section-title"><div><h2>Canais de venda</h2><span>Os três painéis ficam disponíveis para edição simultânea.</span></div><div class="pricing-organize"><button type="button" class="subtle-btn" id="pricingSettingsShortcut">Parâmetros avançados</button></div></div>' +
     '<div id="pricingCategories"></div>' +
     '<details class="workspace-card pricing-method" data-pricing-panel="method"><summary>Como o preço é calculado</summary><div class="pricing-settings-body">' +
@@ -494,5 +494,5 @@
       ? 'Calculadora atualizada. Seus produtos, custos e preferências anteriores foram preservados.'
       : savedAt
         ? 'Preferências recuperadas deste dispositivo.'
-        : 'Exemplos carregados · personalize custo, frete e lucro desejado.', loadError);
+        : 'Preencha os dados dos três canais para calcular.', loadError);
 })();
