@@ -178,27 +178,31 @@
   function updateCategory(category, sourceField) {
     const host = q('[data-pricing-category="' + category.id + '"]');
     if (!host) return;
+    const section = fixedSections.find(item => item.id === category.id);
+    const scenario = category.scenarios.find(item => item.id === category.selectedScenario) || category.scenarios[0];
     const cost = category.cost, shipping = category.shipping;
     const validCosts = cost != null && shipping != null && cost >= 0 && shipping >= 0;
     host.querySelector('[data-base-total]').textContent = validCosts ? money.format(cost + shipping) : 'Revise os custos';
-    const scenario = category.scenarios.find(item => item.id === category.selectedScenario) || category.scenarios[0];
     host.querySelectorAll('[data-quick-scenario]').forEach(field => {
       if (field !== sourceField) field.value = shown(scenario[field.dataset.quickScenario]);
       field.setAttribute('aria-invalid', String(scenario[field.dataset.quickScenario] == null || scenario[field.dataset.quickScenario] < 0 || scenario[field.dataset.quickScenario] > 100));
     });
-    const premium = E.calculate(category, scenario, data.settings, 'premium');
-    host.querySelector('[data-mini-result]').textContent = premium.valid ? 'Premium ' + money.format(premium.price) : 'Preencha os dados';
-    host.querySelector('[data-summary-profit]').textContent = premium.valid ? money.format(premium.profit) : '—';
-    const tray = E.trayFixedFee(cost == null || cost < 0 ? 0 : cost);
-    host.querySelector('[data-tray-fee]').textContent = money.format(tray);
-    host.querySelector('[data-ml-rule]').textContent = premium.valid
-      ? (premium.freeShippingRequired
-        ? 'A partir de ' + money.format(premium.mlThreshold) + ': frete grátis. O frete informado já entra uma única vez no custo.'
-        : 'Abaixo de ' + money.format(premium.mlThreshold) + ': taxa fixa unitária configurada de ' + money.format(premium.mlFixedFee) + '.')
+    const primary = E.calculate(category, scenario, data.settings, section.channels[0]);
+    const trayFee = E.trayFixedFee(cost == null || cost < 0 ? 0 : cost);
+    const trayNode = host.querySelector('[data-tray-fee]');
+    if (trayNode) trayNode.textContent = money.format(trayFee);
+    const mlRule = host.querySelector('[data-ml-rule]');
+    if (mlRule) mlRule.textContent = primary.valid
+      ? (primary.freeShippingRequired ? 'A partir de ' + money.format(primary.mlThreshold) + ': frete grátis; frete informado contado uma vez.' :
+        'Abaixo de ' + money.format(primary.mlThreshold) + ': tarifa fixa configurada de ' + money.format(primary.mlFixedFee) + '.')
       : 'Informe os custos para verificar a regra.';
-    for (const channel of channels) {
-      const result = E.calculate(category, scenario, data.settings, channel.id);
-      const card = host.querySelector('[data-result-channel="' + channel.id + '"]');
+    const profitNode = host.querySelector('[data-summary-profit]');
+    if (profitNode) profitNode.textContent = primary.valid ? money.format(primary.profit) : '—';
+    for (const channelId of section.channels) {
+      const channel = channels.find(item => item.id === channelId);
+      const result = E.calculate(category, scenario, data.settings, channelId);
+      const card = host.querySelector('[data-result-channel="' + channelId + '"]');
+      if (!card) continue;
       card.querySelector('[data-result-rate]').textContent = result.valid ? shown(result.commission) + '%' : '';
       card.querySelector('[data-result-price]').textContent = result.valid ? money.format(result.price) : '—';
       card.querySelector('[data-result-profit]').textContent = result.valid ? 'Lucro líquido: ' + money.format(result.profit) : result.message;
@@ -209,8 +213,8 @@
       if (promo) {
         promo.textContent = result.valid && result.promotionPrice != null ? money.format(result.promotionPrice) : '—';
         card.querySelector('[data-result-discount]').textContent = result.valid && result.promotionPrice != null
-          ? 'Desconto: ' + money.format(result.discountAmount) + ' · ' + shown(result.promotionPct) + '%'
-          : 'Informe a taxa de promoção no início da simulação.';
+          ? 'Preço promocional calculado com ' + shown(result.promotionPct) + '%.'
+          : 'Informe a taxa de promoção no início do painel.';
         card.querySelector('[data-pricing-action="copy-promotion"]').disabled = !(result.valid && result.promotionPrice != null);
       }
       const breakdown = card.querySelector('[data-result-breakdown]');
