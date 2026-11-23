@@ -263,7 +263,8 @@
     data.categories.forEach(category => {
       const scenario = category.scenarios.find(item => item.id === category.selectedScenario) || category.scenarios[0];
       const section = fixedSections.find(item => item.id === category.id);
-      section.channels.forEach(channelId => {\n        const channel = channels.find(item => item.id === channelId);
+      section.channels.forEach(channelId => {
+        const channel = channels.find(item => item.id === channelId);
         const result = E.calculate(category, scenario, data.settings, channel.id);
         rows.push([
           category.name, category.cost, category.shipping, category.profitPct, category.promotionPct, channel.label,
