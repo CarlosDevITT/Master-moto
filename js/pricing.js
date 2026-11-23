@@ -13,7 +13,7 @@
     if (stored) {
       const parsed = JSON.parse(stored);
       migrated = parsed.schemaVersion !== 3;
-      data = normalizeSections(E.validate(parsed));
+      data = E.validate(parsed);
       savedAt = 'anteriormente';
     }
   } catch { loadError = true; }
