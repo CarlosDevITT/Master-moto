@@ -13,10 +13,12 @@
     if (stored) {
       const parsed = JSON.parse(stored);
       migrated = parsed.schemaVersion !== 3;
-      data = E.validate(parsed);
+      data = normalizeSections(E.validate(parsed));
       savedAt = 'anteriormente';
     }
   } catch { loadError = true; }
+  data.settings.storePct = 0;
+  data = normalizeSections(data);
   let lastValid = clone(data);
   const q = selector => document.querySelector('#pricingView ' + selector);
   const qa = selector => Array.from(document.querySelectorAll('#pricingView ' + selector));
@@ -91,7 +93,7 @@
   }
   function replaceData(next) {
     clearTimeout(timer); timer = null;
-    data = E.validate(next); lastValid = clone(data);
+    data = normalizeSections(E.validate(next)); lastValid = clone(data);
     renderAll();
     setStatus('Preferências restauradas neste dispositivo.', false);
   }
@@ -117,36 +119,45 @@
       channels.filter(channel => ids.includes(channel.id)).map(channel => resultCardMarkup(channel, categoryId)).join('') +
       '</div></section>';
   }
+  const fixedSections = [
+    { id: 'fixed-marketplace', name: 'Mercado Livre', eyebrow: 'TABELAS PADRÃO E ALTERNATIVA', channels: ['premium', 'classic', 'premiumAlt', 'classicAlt'], fields: ['cost', 'shipping', 'profitPct', 'promotionPct'] },
+    { id: 'fixed-tray', name: 'Tray · E-commerce', eyebrow: '3X COM DESCONTO E 6X SEM JUROS', channels: ['commerce6', 'commerce3'], fields: ['cost', 'shipping', 'profitPct'] },
+    { id: 'fixed-store', name: 'Loja', eyebrow: 'VENDA DIRETA · PIX', channels: ['store'], fields: ['cost', 'shipping', 'profitPct'] }
+  ];
+  function normalizeSections(value) {
+    const ids = fixedSections.map(section => section.id);
+    if (value.categories.length === 3 && value.categories.every((item, index) => item.id === ids[index])) return value;
+    try { if (!MMStorage.getItem('master-motos-pricing-archive-v3')) MMStorage.setItem('master-motos-pricing-archive-v3', JSON.stringify(value.categories)); } catch {}
+    const base = E.defaults().categories[0];
+    value.categories = fixedSections.map(section => {
+      const item = clone(base);
+      item.id = section.id; item.name = section.name; item.cost = 0; item.shipping = 0; item.profitPct = 0; item.promotionPct = 0;
+      item.commissions = Object.fromEntries(channels.map(channel => [channel.id, null]));
+      item.fixedFees = Object.fromEntries(channels.map(channel => [channel.id, 0]));
+      item.scenarios = [{ id: 'standard', label: 'Sem taxa adicional', feePct: 0 }]; item.selectedScenario = 'standard'; item.collapsed = false;
+      return item;
+    });
+    value.ui = {};
+    return E.validate(value);
+  }
   function categoryMarkup(category, index) {
+    const section = fixedSections[index];
     const scenario = category.scenarios.find(item => item.id === category.selectedScenario) || category.scenarios[0];
-    return '<article class="workspace-card pricing-category ' + (category.collapsed ? 'is-collapsed' : '') + '" data-pricing-category="' + escapeHtml(category.id) + '">' +
-      '<div class="pricing-category-head"><span class="pricing-index">' + (index + 1) + '</span>' +
-      '<label class="pricing-name"><span class="sr-only">Nome da simulação</span><input type="text" maxlength="120" value="' + escapeHtml(category.name) + '" data-category-field="name" placeholder="Nome do produto"></label>' +
-      '<span class="pricing-mini-result" data-mini-result></span><div class="pricing-category-actions">' +
-      '<button type="button" class="subtle-btn" data-pricing-action="duplicate" title="Duplicar esta simulação">Duplicar</button>' +
-      '<button type="button" class="subtle-btn pricing-danger" data-pricing-action="remove-category">Remover</button>' +
-      '<button type="button" class="subtle-btn" data-pricing-action="collapse" aria-expanded="' + (!category.collapsed) + '">' + (category.collapsed ? 'Expandir' : 'Recolher') + '</button></div></div>' +
-      '<div class="pricing-category-body ' + (category.collapsed ? 'hidden' : '') + '">' +
-      '<div class="pricing-quick-grid">' +
-      input(category.cost, 'data-category-field="cost" data-min="0" data-max="1000000000" aria-label="Custo do produto" required', 'Custo do produto (R$)') +
-      input(category.shipping, 'data-category-field="shipping" data-min="0" data-max="1000000000" aria-label="Frete por sua conta"', 'Frete informado (R$)', 'Se não houver custo de frete, deixe zero.') +
-      input(category.profitPct, 'data-category-field="profitPct" data-min="0" data-max="95" aria-label="Taxa de lucro"', 'Lucro desejado (%)', 'Percentual calculado sobre o preço de venda.') +
-      input(category.promotionPct, 'data-category-field="promotionPct" data-min="0" data-max="99.99" aria-label="Taxa de promoção Mercado Livre"', 'Promoção Mercado Livre (%)', 'Calcula o preço De sem alterar o preço Por.') +
-      '</div>' +
-      '<div class="pricing-summary-strip">' +
-      '<div><span>Custo total</span><strong data-base-total>—</strong></div>' +
-      '<div><span>Lucro líquido estimado · ML Premium</span><strong data-summary-profit>—</strong></div>' +
-      '<div><span>Taxa fixa Tray aplicada</span><strong data-tray-fee>—</strong></div>' +
-      '<div class="pricing-summary-wide"><span>Regra de frete Mercado Livre</span><strong data-ml-rule>—</strong></div>' +
-      '</div>' +
-      '<details class="pricing-category-advanced"><summary>Ajustes desta simulação <small>Taxa adicional e configurações específicas</small></summary><div class="pricing-advanced-grid">' +
-      input(scenario.feePct, 'data-quick-scenario="feePct" data-min="0" data-max="100" aria-label="Taxa adicional"', 'Taxa adicional (%)', 'Opcional. A tributação base de 12% fica nos parâmetros gerais.') +
-      '</div></details>' +
-      groupMarkup('Mercado Livre', 'TABELA PADRÃO · 17% / 12%', 'pricing-platform-ml', ['premium', 'classic'], category.id) +
-      groupMarkup('Mercado Livre', 'TABELA ALTERNATIVA · 14% / 11%', 'pricing-platform-ml-alt', ['premiumAlt', 'classicAlt'], category.id) +
-      groupMarkup('Tray · E-commerce', 'SITE · 6X SEM JUROS / 3X COM DESCONTO', 'pricing-platform-tray', ['commerce6', 'commerce3'], category.id) +
-      groupMarkup('Loja própria', 'BALCÃO · PIX', 'pricing-platform-store', ['store'], category.id) +
-      '</div></article>';
+    const fields = [
+      ['cost', 'Custo do produto (R$)', 'Informe o custo de aquisição.'],
+      ['shipping', 'Frete informado (R$)', 'Se não houver, deixe zero.'],
+      ['profitPct', 'Lucro desejado (%)', 'Margem sobre o preço de venda.'],
+      ['promotionPct', 'Promoção Mercado Livre (%)', 'Calcula o preço De sem alterar o Por.']
+    ].filter(([key]) => section.fields.includes(key));
+    return '<article class="pricing-fixed-card pricing-fixed-' + index + '" data-pricing-category="' + section.id + '">' +
+      '<header class="pricing-fixed-head"><div><span class="eyebrow">' + section.eyebrow + '</span><h2>' + section.name + '</h2></div><span class="pricing-fixed-mark" aria-hidden="true"></span></header>' +
+      '<div class="pricing-fixed-inputs">' + fields.map(([key, label, hint]) => input(category[key], 'data-category-field="' + key + '" data-min="0" data-max="' + (key === 'profitPct' ? '95' : key === 'promotionPct' ? '99.99' : '1000000000') + '" aria-label="' + label + '" ' + (key === 'cost' ? 'required' : ''), label, hint)).join('') + '</div>' +
+      '<div class="pricing-fixed-summary"><div><span>Custo total</span><strong data-base-total>—</strong></div>' +
+      (index === 0 ? '<div><span>Regra de frete</span><strong data-ml-rule>Informe os custos</strong></div>' : index === 1 ? '<div><span>Taxa fixa Tray</span><strong data-tray-fee>—</strong></div>' : '<div><span>Lucro líquido estimado</span><strong data-summary-profit>—</strong></div>') + '</div>' +
+      '<div class="pricing-fixed-results">' + section.channels.map(id => resultCardMarkup(channels.find(channel => channel.id === id), section.id)).join('') + '</div>' +
+      '<details class="pricing-fixed-details"><summary>Detalhamento e taxas adicionais</summary><div class="pricing-advanced-grid">' +
+      input(scenario.feePct, 'data-quick-scenario="feePct" data-min="0" data-max="100" aria-label="Taxa adicional"', 'Taxa adicional (%)', 'Opcional; não substitui o imposto base.') +
+      '</div></details></article>';
   }
   function renderFeeRows() {
     q('#pricingFeeRows').innerHTML = data.fees.map(fee =>
@@ -213,10 +224,9 @@
     }
   }
   function renderCategories() {
-    q('#pricingCategories').innerHTML = data.categories.map(categoryMarkup).join('') ||
-      '<div class="workspace-card pricing-empty"><h2>Comece uma simulação</h2><p>Adicione um produto, informe custo e frete e compare os canais.</p><button type="button" class="primary-btn" data-pricing-action="add-category">+ Nova simulação</button></div>';
+    q('#pricingCategories').innerHTML = data.categories.map(categoryMarkup).join('');
     data.categories.forEach(updateCategory);
-    q('#pricingCategoryCount').textContent = data.categories.length + ' simulação(ões)';
+
   }
   function renderAll() {
     qa('[data-pricing-setting]').forEach(field => {
@@ -267,7 +277,7 @@
   $('.nav').insertAdjacentHTML('beforeend', '<button class="nav-item" data-view="precificacao"><span class="nav-icon">▥</span> Precificação</button>');
   $('.main').insertAdjacentHTML('beforeend',
     '<section class="content hidden" id="pricingView">' +
-    '<div class="hero-row"><div><p class="eyebrow">MASTER MOTOS · PRECIFICAÇÃO</p><h1>Precificação</h1><p class="lede">Compare o preço de venda, o lucro e as taxas de cada canal em uma única simulação.</p></div><button type="button" class="primary-btn" id="pricingAddCategory">+ Nova simulação</button></div>' +
+    '<div class="hero-row"><div><p class="eyebrow">MASTER MOTOS · FORMAÇÃO DE PREÇO</p><h1>Precificação</h1><p class="lede">Informe os custos em cada canal e compare preços de venda e lucro estimado.</p></div></div>' +
     '<div class="pricing-save-bar"><span id="pricingSaveStatus" role="status" aria-live="polite"></span><div><button type="button" class="subtle-btn" id="pricingSave">Salvar agora</button><details class="pricing-tools" data-pricing-panel="tools"><summary>Backup e exportação</summary><div><button type="button" class="subtle-btn" id="pricingExport">Exportar backup</button><button type="button" class="subtle-btn" id="pricingImport">Importar backup</button><button type="button" class="subtle-btn" id="pricingCsv">Exportar preços CSV</button><input type="file" id="pricingFile" accept=".json,application/json" hidden></div></details></div></div>' +
     '<p class="pricing-example-note">O cálculo usa markup divisor: taxas, imposto base e lucro desejado são considerados sobre o preço de venda. O frete informado entra uma única vez no custo.</p>' +
     '<details class="workspace-card pricing-settings" data-pricing-panel="settings"><summary>Parâmetros avançados <small>Imposto, comissões, frete grátis e taxas fixas</small></summary><div class="pricing-settings-body">' +
@@ -290,7 +300,7 @@
     '<details class="workspace-card pricing-fee-check" data-pricing-panel="fees"><summary>Conferir taxas de um preço conhecido</summary><div class="pricing-settings-body">' +
     input(data.knownPrice, 'id="pricingKnownPrice" data-min="0" data-max="1000000000" aria-label="Preço de venda conhecido"', 'Preço de venda conhecido (R$)') +
     '<div id="pricingFeeRows"></div><button type="button" class="subtle-btn" data-pricing-action="add-fee">+ Adicionar taxa</button><p class="pricing-help">Consulta o valor percentual de cada taxa sem alterar os preços das simulações.</p></div></details>' +
-    '<div class="pricing-section-title"><div><h2>Simulações de produtos</h2><span id="pricingCategoryCount"></span></div><div class="pricing-organize"><button type="button" class="subtle-btn" data-pricing-action="expand-all">Expandir todas</button><button type="button" class="subtle-btn" data-pricing-action="collapse-all">Recolher todas</button><button type="button" class="subtle-btn" id="pricingSettingsShortcut">Parâmetros</button></div></div>' +
+    '<div class="pricing-section-title"><div><h2>Canais de venda</h2><span>Os três painéis ficam disponíveis para edição simultânea.</span></div><div class="pricing-organize"><button type="button" class="subtle-btn" id="pricingSettingsShortcut">Parâmetros avançados</button></div></div>' +
     '<div id="pricingCategories"></div>' +
     '<details class="workspace-card pricing-method" data-pricing-panel="method"><summary>Como o preço é calculado</summary><div class="pricing-settings-body">' +
     '<p>Preço de venda = (custo do produto + frete informado + taxas fixas) ÷ [1 − (comissão + imposto base + taxa adicional + lucro desejado) ÷ 100].</p>' +
@@ -403,7 +413,7 @@
       data.categories.forEach(item => { item.collapsed = action === 'collapse-all'; });
       renderCategories(); changed(); return;
     }
-    if (action === 'add-category') return addCategory();
+
     if (action === 'add-fee') {
       if (data.fees.length >= 50) return notify('Limite de 50 taxas.');
       data.fees.push({ id: uid('fee'), name: 'Nova taxa', pct: 0 }); renderFeeRows(); changed(); return;
@@ -446,7 +456,7 @@
       renderCategories(); changed(); return;
     }
   });
-  q('#pricingAddCategory').addEventListener('click', addCategory);
+
   q('#pricingSave').addEventListener('click', () => save(true));
   q('#pricingExport').addEventListener('click', exportPreferences);
   q('#pricingCsv').addEventListener('click', exportCsv);
