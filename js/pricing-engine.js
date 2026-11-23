@@ -91,7 +91,7 @@
       schemaVersion: 3, ui: {},
       settings: {
         fixedPct: 12, premiumPct: 17, classicPct: 12, premiumAltPct: 14, classicAltPct: 11,
-        commerce6Pct: 12, commerce3Pct: 4, storePct: -2, feePct: 0,
+        commerce6Pct: 12, commerce3Pct: 4, storePct: 0, feePct: 0,
         mlFreeShippingThreshold: 79, mlFixedFeeBelowThreshold: 0, rounding: 'cent'
       },
       knownPrice: 269.9,
