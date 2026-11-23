@@ -157,7 +157,7 @@
       input(scenario.feePct, 'data-quick-scenario="feePct" data-min="0" data-max="100" aria-label="Taxa adicional"', 'Taxa adicional (%)', 'Opcional; não substitui o imposto base.') +
       '</div></details></article>';
   }
-  data.settings.storePct = 0;
+  if (data.settings.storePct === -2) data.settings.storePct = 0;
   data = normalizeSections(data);
   lastValid = clone(data);
   function renderFeeRows() {
@@ -258,10 +258,10 @@
     notify(result.problems.length ? 'Preferências válidas exportadas. Revise os campos pendentes.' : 'Backup da precificação exportado.');
   }
   function exportCsv() {
-    const rows = [['Simulação', 'Custo', 'Frete', 'Lucro desejado %', 'Promoção ML %', 'Canal', 'Taxa canal %', 'Custo total', 'Preço Por', 'Preço De', 'Lucro líquido', 'Situação']];
+    const rows = [['Painel', 'Custo', 'Frete', 'Lucro desejado %', 'Promoção ML %', 'Canal', 'Taxa canal %', 'Custo total', 'Preço Por', 'Preço De', 'Lucro líquido', 'Situação']];
     data.categories.forEach(category => {
       const scenario = category.scenarios.find(item => item.id === category.selectedScenario) || category.scenarios[0];
-      channels.forEach(channel => {
+      const section = fixedSections.find(item => item.id === category.id);\n      section.channels.forEach(channelId => {\n        const channel = channels.find(item => item.id === channelId);
         const result = E.calculate(category, scenario, data.settings, channel.id);
         rows.push([
           category.name, category.cost, category.shipping, category.profitPct, category.promotionPct, channel.label,
@@ -380,17 +380,6 @@
       data.categories.forEach(category => updateCategory(category)); changed();
     }
   });
-  function addCategory() {
-    if (data.categories.length >= 50) return notify('Limite de 50 simulações. Remova uma para adicionar outra.');
-    const category = clone(E.defaults().categories[0]);
-    category.id = uid('category'); category.name = 'Nova simulação';
-    category.cost = 0; category.shipping = 0; category.profitPct = 0; category.promotionPct = 0;
-    channels.forEach(channel => { category.commissions[channel.id] = null; category.fixedFees[channel.id] = 0; });
-    category.scenarios = [{ id: uid('scenario'), label: 'Taxa adicional', feePct: data.settings.feePct }];
-    category.selectedScenario = category.scenarios[0].id;
-    data.categories.push(category); renderCategories(); changed();
-    q('[data-pricing-category="' + category.id + '"] [data-category-field="cost"]').focus();
-  }
   async function confirmAction(title, text, confirmText) {
     if (!window.Swal) return false;
     const result = await Swal.fire({
