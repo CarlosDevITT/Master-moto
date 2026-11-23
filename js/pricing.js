@@ -17,8 +17,6 @@
       savedAt = 'anteriormente';
     }
   } catch { loadError = true; }
-  data.settings.storePct = 0;
-  data = normalizeSections(data);
   let lastValid = clone(data);
   const q = selector => document.querySelector('#pricingView ' + selector);
   const qa = selector => Array.from(document.querySelectorAll('#pricingView ' + selector));
@@ -159,6 +157,9 @@
       input(scenario.feePct, 'data-quick-scenario="feePct" data-min="0" data-max="100" aria-label="Taxa adicional"', 'Taxa adicional (%)', 'Opcional; não substitui o imposto base.') +
       '</div></details></article>';
   }
+  data.settings.storePct = 0;
+  data = normalizeSections(data);
+  lastValid = clone(data);
   function renderFeeRows() {
     q('#pricingFeeRows').innerHTML = data.fees.map(fee =>
       '<div class="pricing-fee" data-fee-id="' + escapeHtml(fee.id) + '">' +
