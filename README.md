@@ -47,21 +47,15 @@ O catálogo ocupa mais largura e não limita a altura da lista. Exibe 50 motos p
 
 ## Precificação
 
-A aba **Precificação** segue o tema claro/escuro do site e compara ML Premium, ML Clássico, e-commerce 6x, e-commerce 3x e loja. Os dois exemplos iniciais foram adaptados do HTML fornecido; suas taxas são exemplos editáveis, não tarifas oficiais atualizadas.
+A aba **Precificação** apresenta três painéis fixos e independentes: **Mercado Livre**, **Tray · E-commerce** e **Loja**. Não há criação de novas simulações. Cada painel recebe seu próprio custo, frete e lucro desejado; o Mercado Livre também recebe o percentual promocional.
 
-**Conferir taxas de um preço conhecido** é o primeiro painel, antes dos produtos, e abre por padrão. Fechar ou abrir o painel mantém a preferência salva.
+- **Mercado Livre:** compara Premium e Clássico nas tabelas padrão (17% / 12%) e alternativa (14% / 11%). O imposto base inicial é 12%. O preço promocional **De** é calculado a partir do preço **Por**, sem alterar o preço de venda.
+- **Tray:** compara 6x sem juros (12%) e 3x (4%). A taxa fixa depende do custo do produto: abaixo de R$ 50,00 = R$ 10,00; de R$ 50,00 até R$ 100,00 = R$ 5,00; acima de R$ 100,00 = isento.
+- **Loja:** venda direta / PIX, com comissão padrão de 0%.
+- **Frete:** o valor informado entra uma única vez no custo. No Mercado Livre, o limite de frete grátis é configurável (padrão inicial R$ 79,00); abaixo dele pode ser configurada uma tarifa fixa unitária. A calculadora sinaliza quando o preço alcança o limite de frete grátis.
+- **Cálculo:** preço de venda = (custo + frete + taxas fixas) ÷ [1 − (comissão + imposto base + taxa adicional + lucro desejado) ÷ 100]. O lucro desejado é uma margem sobre o preço de venda. Os preços são arredondados conforme a preferência configurada.
 
-1. Preencha apenas **custo, frete e taxa (%)** por produto. Os cinco preços aparecem automaticamente. Frete vazio conta como zero. Não há campo ou acréscimo de lucro desejado.
-2. Enter avança para o próximo campo. **Novo produto** posiciona o cursor no custo. As taxas dos canais usam as preferências já salvas.
-3. Alterações válidas são salvas automaticamente por conta; um produto incompleto preserva seus últimos valores válidos. **Revisar campo pendente** posiciona o cursor para corrigir.
-4. **Backup e exportação** permite salvar, importar preferências e exportar os preços atuais em CSV. O backup completo inclui a precificação.
-
-Produtos expandidos/recolhidos e detalhes dos resultados preservam a organização após recarregar. Backups antigos são convertidos automaticamente: imposto passa a taxa, margens são removidas e embalagem/outros custos já registrados são incorporados ao custo uma única vez.
-
-O preço é `(custo + frete + tarifa fixa do canal) / (1 - (comissão + taxa operacional + taxa informada) / 100)`, arredondado para cima. Uma soma igual ou superior a 100% não gera preço. A conferência de um preço conhecido calcula cada taxa isoladamente, sem somá-la às simulações.
-
-Os dados e a organização da precificação são guardados por conta e sincronizados automaticamente no Supabase. O indicador da conta informa quando há alterações apenas neste dispositivo. Exporte um backup antes de limpar o navegador se houver envios pendentes. O arquivo HTML original não foi alterado.
-
+Os valores e preferências são salvos automaticamente por conta. Os painéis substituem a antiga lista de simulações; ao migrar, a lista anterior é preservada em uma chave de arquivo local. Backup JSON e exportação CSV continuam disponíveis.
 ## Verificação
 
 O visual usa grafite e amarelo, com componentes consistentes no login, catálogo, notas, visão geral, painel ABC e precificação. `css/upgrade.css` concentra as cores, composição, espaçamentos e adaptações por tamanho de tela. O símbolo em `assets/brand-mark.svg` acompanha a identidade do favicon. Ícones de navegação usam SVG; a indicação da página atual também está disponível para leitores de tela. As fontes possuem alternativas locais quando a conexão com o serviço de fontes falha.
