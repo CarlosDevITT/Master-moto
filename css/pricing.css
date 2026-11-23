@@ -217,3 +217,138 @@ body.dark-mode #pricingView .pricing-platform .pricing-copy.is-copied { backgrou
   #pricingView .pricing-organize { width: 100%; }
   #pricingView .pricing-organize button { flex: 1; }
 }
+
+
+/* Precificação · três painéis fixos */
+#pricingView .hero-row { margin-bottom: 18px; }
+#pricingView .pricing-section-title { margin: 26px 0 14px; }
+#pricingView .pricing-section-title h2 { font-size: 19px; }
+#pricingView .pricing-fixed-card {
+  --panel-accent: #e6b323;
+  --panel-soft: color-mix(in srgb, var(--panel-accent) 8%, var(--surface));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--panel-accent);
+  border-radius: 18px;
+  padding: clamp(16px, 2.2vw, 26px);
+  margin: 0 0 18px;
+  box-shadow: 0 8px 26px rgba(20, 28, 38, .055);
+  min-width: 0;
+}
+#pricingView .pricing-fixed-0 { --panel-accent: #e8b526; }
+#pricingView .pricing-fixed-1 { --panel-accent: #3476c7; }
+#pricingView .pricing-fixed-2 { --panel-accent: #26966a; }
+#pricingView .pricing-fixed-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin-bottom: 22px;
+}
+#pricingView .pricing-fixed-head .eyebrow {
+  color: var(--panel-accent); font-size: 10px; font-weight: 800;
+  letter-spacing: .13em; margin: 0 0 5px;
+}
+#pricingView .pricing-fixed-head h2 {
+  margin: 0; font-size: clamp(20px, 2vw, 25px);
+  letter-spacing: -.035em; color: var(--ink);
+}
+#pricingView .pricing-fixed-mark {
+  width: 18px; height: 18px; border: 2px solid var(--panel-accent);
+  transform: rotate(45deg); border-radius: 4px; flex: 0 0 auto;
+}
+#pricingView .pricing-fixed-inputs {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px; margin-bottom: 16px;
+}
+#pricingView .pricing-fixed-1 .pricing-fixed-inputs,
+#pricingView .pricing-fixed-2 .pricing-fixed-inputs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+#pricingView .pricing-fixed-inputs .pricing-field {
+  color: var(--ink); font-size: 12px; gap: 7px;
+}
+#pricingView .pricing-fixed-inputs input {
+  min-height: 48px; border-radius: 10px !important;
+  border: 1px solid var(--line-strong, var(--line)) !important;
+  background: var(--bg) !important; font-size: 16px !important;
+  font-weight: 650; font-variant-numeric: tabular-nums;
+}
+#pricingView .pricing-fixed-inputs input:focus {
+  border-color: var(--panel-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--panel-accent) 18%, transparent);
+}
+#pricingView .pricing-fixed-inputs small { min-height: 14px; }
+#pricingView .pricing-fixed-summary {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 18px;
+}
+#pricingView .pricing-fixed-summary > div {
+  flex: 1 1 190px; min-width: 0; padding: 12px 14px;
+  border-radius: 10px; background: var(--panel-soft);
+  display: grid; gap: 4px;
+}
+#pricingView .pricing-fixed-summary span {
+  color: var(--muted); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+#pricingView .pricing-fixed-summary strong {
+  color: var(--ink); font-size: 14px; line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+#pricingView .pricing-fixed-results {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px; align-items: stretch;
+}
+#pricingView .pricing-fixed-0 .pricing-fixed-results {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+#pricingView .pricing-fixed-1 .pricing-fixed-results {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+#pricingView .pricing-fixed-2 .pricing-fixed-results {
+  grid-template-columns: minmax(0, 1fr);
+}
+#pricingView .pricing-fixed-card .pricing-result {
+  --channel-accent: var(--panel-accent);
+  border-radius: 12px; border-color: var(--line);
+  padding: 16px; gap: 10px;
+}
+#pricingView .pricing-fixed-card .pricing-result > strong {
+  font-size: clamp(23px, 2.2vw, 30px);
+}
+#pricingView .pricing-fixed-card .pricing-result .pricing-result-caption {
+  font-size: 9px; letter-spacing: .1em; font-weight: 800;
+  color: var(--muted);
+}
+#pricingView .pricing-fixed-card .pricing-result .pricing-copy {
+  justify-self: start; border-radius: 8px;
+}
+#pricingView .pricing-fixed-card .pricing-promo {
+  padding: 10px; border-radius: 9px;
+  background: var(--panel-soft); border: 1px solid color-mix(in srgb, var(--panel-accent) 20%, var(--line));
+}
+#pricingView .pricing-fixed-details {
+  margin-top: 14px; border-top: 1px solid var(--line);
+}
+#pricingView .pricing-fixed-details summary {
+  padding: 13px 2px 4px; font-size: 12px;
+}
+#pricingView .pricing-fixed-details .pricing-advanced-grid {
+  max-width: 320px; padding: 12px 0 4px;
+}
+@media (max-width: 760px) {
+  #pricingView .pricing-fixed-inputs,
+  #pricingView .pricing-fixed-1 .pricing-fixed-inputs,
+  #pricingView .pricing-fixed-2 .pricing-fixed-inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #pricingView .pricing-fixed-results,
+  #pricingView .pricing-fixed-0 .pricing-fixed-results,
+  #pricingView .pricing-fixed-1 .pricing-fixed-results {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 420px) {
+  #pricingView .pricing-fixed-card { padding: 14px; border-radius: 14px; }
+  #pricingView .pricing-fixed-inputs,
+  #pricingView .pricing-fixed-1 .pricing-fixed-inputs,
+  #pricingView .pricing-fixed-2 .pricing-fixed-inputs { grid-template-columns: 1fr; }
+  #pricingView .pricing-fixed-inputs input { min-height: 46px; }
+}
